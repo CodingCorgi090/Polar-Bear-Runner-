@@ -8,6 +8,7 @@
 
 class UInputMappingContext;
 class UUserWidget;
+class AActor;
 
 /**
  *  Basic PlayerController class for a third person game
@@ -48,5 +49,14 @@ protected:
 
 	/** Returns true if the player should use UMG touch controls */
 	bool ShouldUseTouchControls() const;
+
+public:
+	/** Routes missed-key damage to the currently possessed runner character. */
+	UFUNCTION(BlueprintCallable, Category="Runner|Damage")
+	bool ReportMissedKeyDamage(float DamageOverride = -1.0f, AActor* DamageCauser = nullptr);
+
+	/** Routes obstacle-hit damage to the currently possessed runner character. */
+	UFUNCTION(BlueprintCallable, Category="Runner|Damage")
+	bool ReportObstacleDamage(float DamageOverride = -1.0f, AActor* DamageCauser = nullptr);
 
 };

@@ -7,6 +7,7 @@
 #include "InputMappingContext.h"
 #include "Blueprint/UserWidget.h"
 #include "Polar_Bear_Runner.h"
+#include "Polar_Bear_RunnerCharacter.h"
 #include "Widgets/Input/SVirtualJoystick.h"
 
 void APolar_Bear_RunnerPlayerController::BeginPlay()
@@ -65,3 +66,24 @@ bool APolar_Bear_RunnerPlayerController::ShouldUseTouchControls() const
 	// are we on a mobile platform? Should we force touch?
 	return SVirtualJoystick::ShouldDisplayTouchInterface() || bForceTouchControls;
 }
+
+bool APolar_Bear_RunnerPlayerController::ReportMissedKeyDamage(float DamageOverride, AActor* DamageCauser)
+{
+	if (APolar_Bear_RunnerCharacter* RunnerCharacter = Cast<APolar_Bear_RunnerCharacter>(GetPawn()))
+	{
+		return RunnerCharacter->RequestDamageFromMissedKey(DamageOverride, DamageCauser);
+	}
+
+	return false;
+}
+
+bool APolar_Bear_RunnerPlayerController::ReportObstacleDamage(float DamageOverride, AActor* DamageCauser)
+{
+	if (APolar_Bear_RunnerCharacter* RunnerCharacter = Cast<APolar_Bear_RunnerCharacter>(GetPawn()))
+	{
+		return RunnerCharacter->RequestDamageFromObstacle(DamageOverride, DamageCauser);
+	}
+
+	return false;
+}
+
