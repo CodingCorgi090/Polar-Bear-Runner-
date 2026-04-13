@@ -38,6 +38,8 @@ public:
 
 	ARunnerObstacle();
 
+	virtual void OnConstruction(const FTransform& Transform) override;
+
 	/** Attempts to damage the supplied actor if it is the runner character. */
 	UFUNCTION(BlueprintCallable, Category="Runner|Obstacle|Damage")
 	bool TryDamageActor(AActor* OtherActor);
@@ -72,6 +74,10 @@ public:
 	/** Toggle to temporarily disable this obstacle without removing it from the level. */
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Runner|Obstacle")
 	bool bIsActive = true;
+
+	/** Mesh used by this obstacle; set this per-instance or in Blueprint to use any static mesh asset. */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Runner|Obstacle|Visual")
+	UStaticMesh* ObstacleMeshAsset = nullptr;
 
 	// ── Blueprint hooks ────────────────────────────────────────────────────────
 

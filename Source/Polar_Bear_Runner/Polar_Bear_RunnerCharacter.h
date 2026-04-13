@@ -120,6 +120,14 @@ public:
 	UFUNCTION(BlueprintPure, Category="Runner|Damage")
 	virtual float GetHealthPercent() const;
 
+	/** Returns current raw health value. */
+	UFUNCTION(BlueprintPure, Category="Runner|Damage")
+	virtual float GetCurrentHealth() const { return CurrentHealth; }
+
+	/** Returns max health value. */
+	UFUNCTION(BlueprintPure, Category="Runner|Damage")
+	virtual float GetMaxHealthValue() const { return MaxHealth; }
+
 	/** Returns true once the runner has reached zero health. */
 	UFUNCTION(BlueprintPure, Category="Runner|Damage")
 	virtual bool IsRunnerDead() const { return bIsDead; }

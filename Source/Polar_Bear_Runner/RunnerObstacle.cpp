@@ -20,6 +20,7 @@ ARunnerObstacle::ARunnerObstacle()
 	static ConstructorHelpers::FObjectFinder<UStaticMesh> DefaultCubeMesh(TEXT("/Engine/BasicShapes/Cube.Cube"));
 	if (DefaultCubeMesh.Succeeded())
 	{
+		ObstacleMeshAsset = DefaultCubeMesh.Object;
 		ObstacleMesh->SetStaticMesh(DefaultCubeMesh.Object);
 	}
 
@@ -32,6 +33,16 @@ ARunnerObstacle::ARunnerObstacle()
 	HitBox->SetCollisionResponseToChannel(ECC_Pawn, ECR_Overlap);
 	HitBox->SetGenerateOverlapEvents(true);
 	HitBox->SetBoxExtent(FVector(50.f, 50.f, 50.f));
+}
+
+void ARunnerObstacle::OnConstruction(const FTransform& Transform)
+{
+	Super::OnConstruction(Transform);
+
+	if (ObstacleMeshAsset != nullptr)
+	{
+		ObstacleMesh->SetStaticMesh(ObstacleMeshAsset);
+	}
 }
 
 void ARunnerObstacle::BeginPlay()
