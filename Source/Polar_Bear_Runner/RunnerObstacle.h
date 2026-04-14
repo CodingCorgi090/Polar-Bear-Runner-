@@ -75,7 +75,7 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Runner|Obstacle")
 	bool bIsActive = true;
 
-	/** Mesh used by this obstacle; set this per-instance or in Blueprint to use any static mesh asset. */
+	/** Optional mesh override; leave null to keep the mesh configured on the Blueprint ObstacleMesh component. */
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Runner|Obstacle|Visual")
 	UStaticMesh* ObstacleMeshAsset = nullptr;
 

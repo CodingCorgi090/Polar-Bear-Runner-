@@ -20,7 +20,6 @@ ARunnerObstacle::ARunnerObstacle()
 	static ConstructorHelpers::FObjectFinder<UStaticMesh> DefaultCubeMesh(TEXT("/Engine/BasicShapes/Cube.Cube"));
 	if (DefaultCubeMesh.Succeeded())
 	{
-		ObstacleMeshAsset = DefaultCubeMesh.Object;
 		ObstacleMesh->SetStaticMesh(DefaultCubeMesh.Object);
 	}
 
