@@ -11,6 +11,7 @@
 #include "EnhancedInputSubsystems.h"
 #include "InputActionValue.h"
 #include "Polar_Bear_Runner.h"
+#include "Engine/World.h"
 
 APolar_Bear_RunnerCharacter::APolar_Bear_RunnerCharacter()
 {
@@ -48,6 +49,13 @@ APolar_Bear_RunnerCharacter::APolar_Bear_RunnerCharacter()
 
 	// Note: The skeletal mesh and anim blueprint references on the Mesh component (inherited from Character) 
 	// are set in the derived blueprint asset named ThirdPersonCharacter (to avoid direct content references in C++)
+}
+
+void APolar_Bear_RunnerCharacter::BeginPlay()
+{
+	Super::BeginPlay();
+
+	ResetRunnerHealth(true);
 }
 
 void APolar_Bear_RunnerCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
@@ -131,3 +139,73 @@ void APolar_Bear_RunnerCharacter::DoJumpEnd()
 	// signal the character to stop jumping
 	StopJumping();
 }
+
+bool APolar_Bear_RunnerCharacter::ApplyRunnerDamage(float DamageAmount, ERunnerDamageType DamageType, AActor* DamageCauser)
+{
+	if (DamageAmount <= 0.0f || bIsDead)
+	{
+		return false;
+	}
+
+	const UWorld* World = GetWorld();
+	const float TimeSeconds = World ? World->GetTimeSeconds() : 0.0f;
+
+	if (DamageCooldownSeconds > 0.0f && LastDamageTimeSeconds >= 0.0f)
+	{
+		if (TimeSeconds - LastDamageTimeSeconds < DamageCooldownSeconds)
+		{
+			return false;
+		}
+	}
+
+	LastDamageTimeSeconds = TimeSeconds;
+	CurrentHealth = FMath::Clamp(CurrentHealth - DamageAmount, 0.0f, MaxHealth);
+
+	OnRunnerHealthChanged.Broadcast(CurrentHealth, MaxHealth);
+	BP_OnRunnerHealthChanged(CurrentHealth, MaxHealth);
+
+	OnRunnerDamageTaken.Broadcast(DamageAmount, CurrentHealth, MaxHealth, DamageType, DamageCauser);
+	BP_OnRunnerDamageTaken(DamageAmount, CurrentHealth, MaxHealth, DamageType, DamageCauser);
+
+	if (CurrentHealth <= 0.0f && !bIsDead)
+	{
+		bIsDead = true;
+		OnRunnerDied.Broadcast(DamageType, DamageCauser);
+		BP_OnRunnerDied(DamageType, DamageCauser);
+	}
+
+	return true;
+}
+
+bool APolar_Bear_RunnerCharacter::RequestDamageFromMissedKey(float DamageOverride, AActor* DamageCauser)
+{
+	const float DamageToApply = DamageOverride > 0.0f ? DamageOverride : MissedKeyDamage;
+	return ApplyRunnerDamage(DamageToApply, ERunnerDamageType::MissedKey, DamageCauser);
+}
+
+bool APolar_Bear_RunnerCharacter::RequestDamageFromObstacle(float DamageOverride, AActor* DamageCauser)
+{
+	const float DamageToApply = DamageOverride > 0.0f ? DamageOverride : ObstacleHitDamage;
+	return ApplyRunnerDamage(DamageToApply, ERunnerDamageType::ObstacleHit, DamageCauser);
+}
+
+void APolar_Bear_RunnerCharacter::ResetRunnerHealth(bool bRevive)
+{
+	MaxHealth = FMath::Max(MaxHealth, 1.0f);
+	CurrentHealth = MaxHealth;
+	LastDamageTimeSeconds = -1.0f;
+
+	if (bRevive)
+	{
+		bIsDead = false;
+	}
+
+	OnRunnerHealthChanged.Broadcast(CurrentHealth, MaxHealth);
+	BP_OnRunnerHealthChanged(CurrentHealth, MaxHealth);
+}
+
+float APolar_Bear_RunnerCharacter::GetHealthPercent() const
+{
+	return MaxHealth > 0.0f ? CurrentHealth / MaxHealth : 0.0f;
+}
+
