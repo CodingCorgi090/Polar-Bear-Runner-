@@ -8,6 +8,10 @@
 
 class UInputMappingContext;
 class UUserWidget;
+class AActor;
+class APolar_Bear_RunnerCharacter;
+class URunnerHUDWidget;
+enum class ERunnerDamageType : uint8;
 
 /**
  *  Basic PlayerController class for a third person game
@@ -43,10 +47,45 @@ protected:
 	/** Gameplay initialization */
 	virtual void BeginPlay() override;
 
+	virtual void OnPossess(APawn* InPawn) override;
+
+	virtual void OnUnPossess() override;
+
 	/** Input mapping context setup */
 	virtual void SetupInputComponent() override;
 
 	/** Returns true if the player should use UMG touch controls */
 	bool ShouldUseTouchControls() const;
+
+	/** Widget class used for health/game-over UI. */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Runner|UI")
+	TSubclassOf<URunnerHUDWidget> RunnerHUDWidgetClass;
+
+	/** Spawned runner HUD widget instance. */
+	UPROPERTY(BlueprintReadOnly, Category="Runner|UI")
+	TObjectPtr<URunnerHUDWidget> RunnerHUDWidget;
+
+	/** Time dilation applied on death to accent game over before restart. */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Runner|UI", meta=(ClampMin="0.05", ClampMax="1.0", UIMin="0.05", UIMax="1.0"))
+	float DeathTimeDilation = 0.2f;
+
+	UFUNCTION()
+	void HandleRunnerHealthChanged(float NewHealth, float MaxHealth);
+
+	UFUNCTION()
+	void HandleRunnerDied(ERunnerDamageType DamageType, AActor* DamageCauser);
+
+	void BindToRunnerCharacter(APolar_Bear_RunnerCharacter* RunnerCharacter);
+
+	void UnbindFromRunnerCharacter(APolar_Bear_RunnerCharacter* RunnerCharacter);
+
+public:
+	/** Routes missed-key damage to the currently possessed runner character. */
+	UFUNCTION(BlueprintCallable, Category="Runner|Damage")
+	bool ReportMissedKeyDamage(float DamageOverride = -1.0f, AActor* DamageCauser = nullptr);
+
+	/** Routes obstacle-hit damage to the currently possessed runner character. */
+	UFUNCTION(BlueprintCallable, Category="Runner|Damage")
+	bool ReportObstacleDamage(float DamageOverride = -1.0f, AActor* DamageCauser = nullptr);
 
 };
