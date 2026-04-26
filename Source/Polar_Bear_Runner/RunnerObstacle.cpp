@@ -4,6 +4,7 @@
 #include "Polar_Bear_RunnerCharacter.h"
 #include "Components/StaticMeshComponent.h"
 #include "Components/BoxComponent.h"
+#include "Engine/StaticMesh.h"
 #include "Polar_Bear_Runner.h"
 
 ARunnerObstacle::ARunnerObstacle()
@@ -13,8 +14,11 @@ ARunnerObstacle::ARunnerObstacle()
 	// Root is a static mesh with no C++ default asset so Blueprints can choose the visual.
 	ObstacleMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("ObstacleMesh"));
 	SetRootComponent(ObstacleMesh);
-	ObstacleMesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);
-	ObstacleMesh->SetGenerateOverlapEvents(false);
+	ObstacleMesh->SetCollisionEnabled(ECollisionEnabled::QueryOnly);
+	ObstacleMesh->SetCollisionObjectType(ECC_WorldDynamic);
+	ObstacleMesh->SetCollisionResponseToAllChannels(ECR_Ignore);
+	ObstacleMesh->SetCollisionResponseToChannel(ECC_Pawn, ECR_Overlap);
+	ObstacleMesh->SetGenerateOverlapEvents(true);
 
 	// Separate hit box so the damage volume can be tuned independently of the visual mesh
 	HitBox = CreateDefaultSubobject<UBoxComponent>(TEXT("HitBox"));
@@ -35,14 +39,59 @@ void ARunnerObstacle::OnConstruction(const FTransform& Transform)
 	{
 		ObstacleMesh->SetStaticMesh(ObstacleMeshAsset);
 	}
+
+	UpdateHitBoxFromMeshBounds();
+	ConfigureDamageCollision();
 }
 
 void ARunnerObstacle::BeginPlay()
 {
 	Super::BeginPlay();
 
-	HitBox->OnComponentBeginOverlap.RemoveDynamic(this, &ARunnerObstacle::OnHitBoxOverlapBegin);
-	HitBox->OnComponentBeginOverlap.AddDynamic(this, &ARunnerObstacle::OnHitBoxOverlapBegin);
+	UpdateHitBoxFromMeshBounds();
+	ConfigureDamageCollision();
+
+	HitBox->OnComponentBeginOverlap.RemoveDynamic(this, &ARunnerObstacle::OnDamageOverlapBegin);
+	HitBox->OnComponentBeginOverlap.AddDynamic(this, &ARunnerObstacle::OnDamageOverlapBegin);
+
+	ObstacleMesh->OnComponentBeginOverlap.RemoveDynamic(this, &ARunnerObstacle::OnDamageOverlapBegin);
+	ObstacleMesh->OnComponentBeginOverlap.AddDynamic(this, &ARunnerObstacle::OnDamageOverlapBegin);
+}
+
+void ARunnerObstacle::ConfigureDamageCollision()
+{
+	HitBox->SetCollisionEnabled(ECollisionEnabled::QueryOnly);
+	HitBox->SetCollisionResponseToAllChannels(ECR_Ignore);
+	HitBox->SetCollisionResponseToChannel(ECC_Pawn, ECR_Overlap);
+	HitBox->SetGenerateOverlapEvents(true);
+
+	ObstacleMesh->SetCollisionEnabled(ECollisionEnabled::QueryOnly);
+	ObstacleMesh->SetCollisionResponseToAllChannels(ECR_Ignore);
+	ObstacleMesh->SetCollisionResponseToChannel(ECC_Pawn, ECR_Overlap);
+	ObstacleMesh->SetGenerateOverlapEvents(true);
+}
+
+void ARunnerObstacle::UpdateHitBoxFromMeshBounds()
+{
+	if (!bAutoSizeHitBoxToMesh || ObstacleMesh == nullptr || HitBox == nullptr)
+	{
+		return;
+	}
+
+	const UStaticMesh* StaticMesh = ObstacleMesh->GetStaticMesh();
+	if (StaticMesh == nullptr)
+	{
+		return;
+	}
+
+	const FBoxSphereBounds MeshBounds = StaticMesh->GetBounds();
+	const FVector PaddedExtent(
+		FMath::Max(MeshBounds.BoxExtent.X + HitBoxPadding.X, 1.0f),
+		FMath::Max(MeshBounds.BoxExtent.Y + HitBoxPadding.Y, 1.0f),
+		FMath::Max(MeshBounds.BoxExtent.Z + HitBoxPadding.Z, 1.0f));
+
+	HitBox->SetRelativeLocation(MeshBounds.Origin);
+	HitBox->SetBoxExtent(PaddedExtent, true);
 }
 
 bool ARunnerObstacle::TryDamageActor(AActor* OtherActor)
@@ -58,8 +107,7 @@ bool ARunnerObstacle::TryDamageActor(AActor* OtherActor)
 		return false;
 	}
 
-	const float DamageToApply = bKillPlayerOnOverlap ? Runner->GetCurrentHealth() : DamageOverride;
-	const bool bDamageApplied = Runner->RequestDamageFromObstacle(DamageToApply, this);
+	const bool bDamageApplied = Runner->KillRunner(ERunnerDamageType::ObstacleHit, this);
 
 	if (bDamageApplied)
 	{
@@ -81,9 +129,9 @@ bool ARunnerObstacle::TryDamageActor(AActor* OtherActor)
 	return bDamageApplied;
 }
 
-void ARunnerObstacle::OnHitBoxOverlapBegin(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor,
-                                            UPrimitiveComponent* OtherComp, int32 OtherBodyIndex,
-                                            bool bFromSweep, const FHitResult& SweepResult)
+void ARunnerObstacle::OnDamageOverlapBegin(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor,
+                                           UPrimitiveComponent* OtherComp, int32 OtherBodyIndex,
+                                           bool bFromSweep, const FHitResult& SweepResult)
 {
 	TryDamageActor(OtherActor);
 }
