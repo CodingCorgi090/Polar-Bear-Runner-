@@ -5,23 +5,16 @@
 #include "Components/StaticMeshComponent.h"
 #include "Components/BoxComponent.h"
 #include "Polar_Bear_Runner.h"
-#include "UObject/ConstructorHelpers.h"
 
 ARunnerObstacle::ARunnerObstacle()
 {
 	PrimaryActorTick.bCanEverTick = false;
 
-	// Root is a static mesh so artists can swap it out in Blueprint
+	// Root is a static mesh with no C++ default asset so Blueprints can choose the visual.
 	ObstacleMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("ObstacleMesh"));
 	SetRootComponent(ObstacleMesh);
-	ObstacleMesh->SetCollisionProfileName(TEXT("BlockAll"));
+	ObstacleMesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 	ObstacleMesh->SetGenerateOverlapEvents(false);
-
-	static ConstructorHelpers::FObjectFinder<UStaticMesh> DefaultCubeMesh(TEXT("/Engine/BasicShapes/Cube.Cube"));
-	if (DefaultCubeMesh.Succeeded())
-	{
-		ObstacleMesh->SetStaticMesh(DefaultCubeMesh.Object);
-	}
 
 	// Separate hit box so the damage volume can be tuned independently of the visual mesh
 	HitBox = CreateDefaultSubobject<UBoxComponent>(TEXT("HitBox"));
@@ -65,7 +58,8 @@ bool ARunnerObstacle::TryDamageActor(AActor* OtherActor)
 		return false;
 	}
 
-	const bool bDamageApplied = Runner->RequestDamageFromObstacle(DamageOverride, this);
+	const float DamageToApply = bKillPlayerOnOverlap ? Runner->GetCurrentHealth() : DamageOverride;
+	const bool bDamageApplied = Runner->RequestDamageFromObstacle(DamageToApply, this);
 
 	if (bDamageApplied)
 	{

@@ -12,10 +12,13 @@
 #include "UI/RunnerHUDWidget.h"
 #include "Widgets/Input/SVirtualJoystick.h"
 #include "GameFramework/WorldSettings.h"
+#include "TimerManager.h"
 
 void APolar_Bear_RunnerPlayerController::BeginPlay()
 {
 	Super::BeginPlay();
+
+	UE_LOG(LogPolar_Bear_Runner, Log, TEXT("PlayerController BeginPlay called."));
 
 	if (IsLocalPlayerController() && RunnerHUDWidgetClass)
 	{
@@ -45,12 +48,14 @@ void APolar_Bear_RunnerPlayerController::BeginPlay()
 
 	}
 
+	UE_LOG(LogPolar_Bear_Runner, Log, TEXT("PlayerController binding to runner character."));
 	BindToRunnerCharacter(Cast<APolar_Bear_RunnerCharacter>(GetPawn()));
 }
 
 void APolar_Bear_RunnerPlayerController::OnPossess(APawn* InPawn)
 {
 	Super::OnPossess(InPawn);
+	UE_LOG(LogPolar_Bear_Runner, Log, TEXT("PlayerController OnPossess called. Pawn=%s"), *GetNameSafe(InPawn));
 	BindToRunnerCharacter(Cast<APolar_Bear_RunnerCharacter>(InPawn));
 }
 
@@ -150,18 +155,68 @@ void APolar_Bear_RunnerPlayerController::HandleRunnerDied(ERunnerDamageType Dama
 		World->GetWorldSettings()->SetTimeDilation(DeathTimeDilation);
 	}
 
-	if (APolar_Bear_RunnerGameMode* RunnerGameMode = GetWorld() ? GetWorld()->GetAuthGameMode<APolar_Bear_RunnerGameMode>() : nullptr)
+	// Instead of restarting level, respawn the player
+	if (APolar_Bear_RunnerCharacter* RunnerCharacter = Cast<APolar_Bear_RunnerCharacter>(GetPawn()))
 	{
-		RunnerGameMode->TriggerGameOverAndRestart(this);
+		(void)RunnerCharacter;
+		UWorld* World = GetWorld();
+		if (World)
+		{
+			World->GetTimerManager().ClearTimer(RespawnTimerHandle);
+
+			const float TimerDelay = DeathTimeDilation > KINDA_SMALL_NUMBER
+				? RespawnDelaySeconds * DeathTimeDilation
+				: RespawnDelaySeconds;
+
+			World->GetTimerManager().SetTimer(
+				RespawnTimerHandle,
+				this,
+				&APolar_Bear_RunnerPlayerController::RespawnRunnerAfterDeath,
+				TimerDelay,
+				false);
+		}
 	}
+}
+
+void APolar_Bear_RunnerPlayerController::RespawnRunnerAfterDeath()
+{
+	UE_LOG(LogPolar_Bear_Runner, Warning, TEXT("Respawn timer fired"));
+
+	if (UWorld* World = GetWorld())
+	{
+		World->GetWorldSettings()->SetTimeDilation(1.0f);
+	}
+
+	APolar_Bear_RunnerCharacter* RunnerCharacter = Cast<APolar_Bear_RunnerCharacter>(GetPawn());
+	if (!RunnerCharacter)
+	{
+		UE_LOG(LogPolar_Bear_Runner, Error, TEXT("Could not get character in respawn callback!"));
+	}
+	else
+	{
+		RunnerCharacter->RespawnPlayer();
+	}
+
+	SetIgnoreMoveInput(false);
+	SetIgnoreLookInput(false);
+
+	if (RunnerHUDWidget)
+	{
+		RunnerHUDWidget->HideGameOver();
+	}
+
+	UE_LOG(LogPolar_Bear_Runner, Warning, TEXT("Respawn complete!"));
 }
 
 void APolar_Bear_RunnerPlayerController::BindToRunnerCharacter(APolar_Bear_RunnerCharacter* RunnerCharacter)
 {
 	if (!RunnerCharacter)
 	{
+		UE_LOG(LogPolar_Bear_Runner, Warning, TEXT("BindToRunnerCharacter called with null RunnerCharacter"));
 		return;
 	}
+
+	UE_LOG(LogPolar_Bear_Runner, Log, TEXT("Binding to RunnerCharacter %s"), *GetNameSafe(RunnerCharacter));
 
 	UnbindFromRunnerCharacter(RunnerCharacter);
 	RunnerCharacter->OnRunnerHealthChanged.AddDynamic(this, &APolar_Bear_RunnerPlayerController::HandleRunnerHealthChanged);
@@ -180,4 +235,3 @@ void APolar_Bear_RunnerPlayerController::UnbindFromRunnerCharacter(APolar_Bear_R
 	RunnerCharacter->OnRunnerHealthChanged.RemoveDynamic(this, &APolar_Bear_RunnerPlayerController::HandleRunnerHealthChanged);
 	RunnerCharacter->OnRunnerDied.RemoveDynamic(this, &APolar_Bear_RunnerPlayerController::HandleRunnerDied);
 }
-

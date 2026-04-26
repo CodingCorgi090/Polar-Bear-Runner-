@@ -20,6 +20,9 @@ public:
 	UFUNCTION(BlueprintCallable, Category="Runner|UI")
 	void ShowGameOver(float FinalHealth, float InMaxHealth);
 
+	UFUNCTION(BlueprintCallable, Category="Runner|UI")
+	void HideGameOver();
+
 	UFUNCTION(BlueprintPure, Category="Runner|UI")
 	float GetHealthPercent() const;
 
@@ -32,6 +35,9 @@ public:
 	UFUNCTION(BlueprintImplementableEvent, Category="Runner|UI")
 	void BP_OnGameOverShown(float FinalHealth, float InMaxHealth);
 
+	UFUNCTION(BlueprintImplementableEvent, Category="Runner|UI")
+	void BP_OnGameOverHidden();
+
 protected:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Runner|UI")
 	float CurrentHealth = 0.0f;
@@ -42,4 +48,3 @@ protected:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Runner|UI")
 	bool bGameOverShown = false;
 };
-

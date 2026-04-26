@@ -12,6 +12,9 @@ class UCameraComponent;
 class UInputAction;
 struct FInputActionValue;
 
+// Forward declare the spawn point actor so designers can assign it in Blueprints
+class ARunnerSpawnPoint;
+
 DECLARE_LOG_CATEGORY_EXTERN(LogTemplateCharacter, Log, All);
 
 UENUM(BlueprintType)
@@ -116,6 +119,18 @@ public:
 	UFUNCTION(BlueprintCallable, Category="Runner|Damage")
 	virtual void ResetRunnerHealth(bool bRevive = true);
 
+	/** Respawns the player at the initial location, resetting health and state. */
+	UFUNCTION(BlueprintCallable, Category="Runner|Respawn")
+	virtual void RespawnPlayer();
+
+	/** Sets the actor used as this runner's respawn location. */
+	UFUNCTION(BlueprintCallable, Category="Runner|Respawn")
+	virtual void SetRespawnPoint(ARunnerSpawnPoint* NewSpawnPoint);
+
+	/** Returns the currently assigned respawn point, if any. */
+	UFUNCTION(BlueprintPure, Category="Runner|Respawn")
+	ARunnerSpawnPoint* GetRespawnPoint() const { return AssignedSpawnPoint; }
+
 	/** Returns current normalized health from 0.0 to 1.0. */
 	UFUNCTION(BlueprintPure, Category="Runner|Damage")
 	virtual float GetHealthPercent() const;
@@ -180,6 +195,15 @@ protected:
 	/** True once runner has no health left. */
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Runner|Damage")
 	bool bIsDead = false;
+
+	/** Optional spawn point reference. Assign this on the Character Blueprint or placed instance to control respawn.
+	 *  If left unset, the runner respawns at its starting transform.
+	 */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Runner|Respawn", meta=(AllowPrivateAccess="true"))
+	TObjectPtr<ARunnerSpawnPoint> AssignedSpawnPoint = nullptr;
+
+	/** Initial transform for respawning (cached). */
+	FTransform InitialTransform;
 
 private:
 	float LastDamageTimeSeconds = -1.0f;

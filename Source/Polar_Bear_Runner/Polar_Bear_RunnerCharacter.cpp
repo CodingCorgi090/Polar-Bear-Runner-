@@ -12,6 +12,7 @@
 #include "InputActionValue.h"
 #include "Polar_Bear_Runner.h"
 #include "Engine/World.h"
+#include "RunnerSpawnPoint.h"
 
 APolar_Bear_RunnerCharacter::APolar_Bear_RunnerCharacter()
 {
@@ -56,6 +57,21 @@ void APolar_Bear_RunnerCharacter::BeginPlay()
 	Super::BeginPlay();
 
 	ResetRunnerHealth(true);
+
+	InitialTransform = GetActorTransform();
+
+	if (AssignedSpawnPoint != nullptr)
+	{
+		InitialTransform = AssignedSpawnPoint->GetActorTransform();
+		UE_LOG(LogPolar_Bear_Runner, Log, TEXT("Using AssignedSpawnPoint '%s' at %s"), *GetNameSafe(AssignedSpawnPoint), *InitialTransform.GetLocation().ToString());
+		SetActorTransform(InitialTransform, false, nullptr, ETeleportType::TeleportPhysics);
+	}
+	else
+	{
+		UE_LOG(LogPolar_Bear_Runner, Log, TEXT("No AssignedSpawnPoint set. Using character start transform at %s"), *InitialTransform.GetLocation().ToString());
+	}
+
+	UE_LOG(LogPolar_Bear_Runner, Log, TEXT("Character initial transform set to %s"), *InitialTransform.GetLocation().ToString());
 }
 
 void APolar_Bear_RunnerCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
@@ -204,8 +220,61 @@ void APolar_Bear_RunnerCharacter::ResetRunnerHealth(bool bRevive)
 	BP_OnRunnerHealthChanged(CurrentHealth, MaxHealth);
 }
 
+void APolar_Bear_RunnerCharacter::RespawnPlayer()
+{
+	UE_LOG(LogPolar_Bear_Runner, Log, TEXT("RespawnPlayer called. Initial transform location: %s"), *InitialTransform.GetLocation().ToString());
+
+	// Ensure the character is enabled
+	SetActorEnableCollision(true);
+	SetActorHiddenInGame(false);
+
+	// Reset velocity
+	GetCharacterMovement()->Velocity = FVector::ZeroVector;
+	GetCharacterMovement()->StopMovementImmediately();
+
+	// Use TeleportTo for proper character movement component handling. If an AssignedSpawnPoint exists use its current transform
+	FTransform SpawnTransform = InitialTransform;
+	if (AssignedSpawnPoint != nullptr)
+	{
+		SpawnTransform = AssignedSpawnPoint->GetActorTransform();
+		UE_LOG(LogPolar_Bear_Runner, Log, TEXT("Respawning to AssignedSpawnPoint '%s' at %s"), *GetNameSafe(AssignedSpawnPoint), *SpawnTransform.GetLocation().ToString());
+	}
+
+	FVector SpawnLocation = SpawnTransform.GetLocation();
+	FRotator SpawnRotation = SpawnTransform.Rotator();
+
+	if (TeleportTo(SpawnLocation, SpawnRotation))
+	{
+		UE_LOG(LogPolar_Bear_Runner, Log, TEXT("Teleport successful to %s"), *GetActorLocation().ToString());
+	}
+	else
+	{
+		UE_LOG(LogPolar_Bear_Runner, Warning, TEXT("Teleport failed! Setting transform directly."));
+		SetActorTransform(SpawnTransform, false, nullptr, ETeleportType::TeleportPhysics);
+	}
+
+	// Reset health
+	ResetRunnerHealth(true);
+
+	UE_LOG(LogPolar_Bear_Runner, Log, TEXT("RespawnPlayer complete. Current location: %s, Health: %f"), *GetActorLocation().ToString(), CurrentHealth);
+}
+
+void APolar_Bear_RunnerCharacter::SetRespawnPoint(ARunnerSpawnPoint* NewSpawnPoint)
+{
+	AssignedSpawnPoint = NewSpawnPoint;
+
+	if (AssignedSpawnPoint != nullptr)
+	{
+		InitialTransform = AssignedSpawnPoint->GetActorTransform();
+		UE_LOG(LogPolar_Bear_Runner, Log, TEXT("AssignedSpawnPoint changed to '%s' at %s"),
+		       *GetNameSafe(AssignedSpawnPoint), *InitialTransform.GetLocation().ToString());
+		return;
+	}
+
+	InitialTransform = GetActorTransform();
+}
+
 float APolar_Bear_RunnerCharacter::GetHealthPercent() const
 {
 	return MaxHealth > 0.0f ? CurrentHealth / MaxHealth : 0.0f;
 }
-
