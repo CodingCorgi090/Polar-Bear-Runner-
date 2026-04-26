@@ -4,7 +4,6 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/PlayerController.h"
-#include "TimerManager.h"
 #include "Polar_Bear_RunnerPlayerController.generated.h"
 
 class UInputMappingContext;
@@ -66,14 +65,6 @@ protected:
 	UPROPERTY(BlueprintReadOnly, Category="Runner|UI")
 	TObjectPtr<URunnerHUDWidget> RunnerHUDWidget;
 
-	/** Time dilation applied on death to accent game over before restart. */
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Runner|UI", meta=(ClampMin="0.05", ClampMax="1.0", UIMin="0.05", UIMax="1.0"))
-	float DeathTimeDilation = 0.2f;
-
-	/** Real-time delay before reviving the runner after death. */
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Runner|Respawn", meta=(ClampMin="0.0", UIMin="0.0", Units="s"))
-	float RespawnDelaySeconds = 1.0f;
-
 	UFUNCTION()
 	void HandleRunnerHealthChanged(float NewHealth, float MaxHealth);
 
@@ -86,14 +77,12 @@ protected:
 
 	void RespawnRunnerAfterDeath();
 
-	FTimerHandle RespawnTimerHandle;
-
 public:
 	/** Routes missed-key damage to the currently possessed runner character. */
 	UFUNCTION(BlueprintCallable, Category="Runner|Damage")
 	bool ReportMissedKeyDamage(float DamageOverride = -1.0f, AActor* DamageCauser = nullptr);
 
-	/** Routes obstacle-hit damage to the currently possessed runner character. */
+	/** Kills the currently possessed runner character for obstacle hits. */
 	UFUNCTION(BlueprintCallable, Category="Runner|Damage")
 	bool ReportObstacleDamage(float DamageOverride = -1.0f, AActor* DamageCauser = nullptr);
 

@@ -12,7 +12,6 @@
 #include "UI/RunnerHUDWidget.h"
 #include "Widgets/Input/SVirtualJoystick.h"
 #include "GameFramework/WorldSettings.h"
-#include "TimerManager.h"
 
 void APolar_Bear_RunnerPlayerController::BeginPlay()
 {
@@ -152,29 +151,14 @@ void APolar_Bear_RunnerPlayerController::HandleRunnerDied(ERunnerDamageType Dama
 
 	if (UWorld* World = GetWorld())
 	{
-		World->GetWorldSettings()->SetTimeDilation(DeathTimeDilation);
+		World->GetWorldSettings()->SetTimeDilation(1.0f);
 	}
 
 	// Instead of restarting level, respawn the player
 	if (APolar_Bear_RunnerCharacter* RunnerCharacter = Cast<APolar_Bear_RunnerCharacter>(GetPawn()))
 	{
 		(void)RunnerCharacter;
-		UWorld* World = GetWorld();
-		if (World)
-		{
-			World->GetTimerManager().ClearTimer(RespawnTimerHandle);
-
-			const float TimerDelay = DeathTimeDilation > KINDA_SMALL_NUMBER
-				? RespawnDelaySeconds * DeathTimeDilation
-				: RespawnDelaySeconds;
-
-			World->GetTimerManager().SetTimer(
-				RespawnTimerHandle,
-				this,
-				&APolar_Bear_RunnerPlayerController::RespawnRunnerAfterDeath,
-				TimerDelay,
-				false);
-		}
+		RespawnRunnerAfterDeath();
 	}
 }
 

@@ -166,7 +166,7 @@ bool APolar_Bear_RunnerCharacter::ApplyRunnerDamage(float DamageAmount, ERunnerD
 	const UWorld* World = GetWorld();
 	const float TimeSeconds = World ? World->GetTimeSeconds() : 0.0f;
 
-	if (DamageCooldownSeconds > 0.0f && LastDamageTimeSeconds >= 0.0f)
+	if (bUseDamageCooldown && DamageCooldownSeconds > 0.0f && LastDamageTimeSeconds >= 0.0f)
 	{
 		if (TimeSeconds - LastDamageTimeSeconds < DamageCooldownSeconds)
 		{
@@ -201,8 +201,41 @@ bool APolar_Bear_RunnerCharacter::RequestDamageFromMissedKey(float DamageOverrid
 
 bool APolar_Bear_RunnerCharacter::RequestDamageFromObstacle(float DamageOverride, AActor* DamageCauser)
 {
-	const float DamageToApply = DamageOverride > 0.0f ? DamageOverride : ObstacleHitDamage;
-	return ApplyRunnerDamage(DamageToApply, ERunnerDamageType::ObstacleHit, DamageCauser);
+	(void)DamageOverride;
+	return KillRunner(ERunnerDamageType::ObstacleHit, DamageCauser);
+}
+
+bool APolar_Bear_RunnerCharacter::KillRunner(ERunnerDamageType DamageType, AActor* DamageCauser)
+{
+	if (bIsDead)
+	{
+		return false;
+	}
+
+	bIsDead = true;
+	SetActorEnableCollision(false);
+	SetActorHiddenInGame(true);
+	GetCharacterMovement()->Velocity = FVector::ZeroVector;
+	GetCharacterMovement()->StopMovementImmediately();
+	GetCharacterMovement()->DisableMovement();
+
+	const UWorld* World = GetWorld();
+	LastDamageTimeSeconds = World ? World->GetTimeSeconds() : 0.0f;
+
+	MaxHealth = FMath::Max(MaxHealth, 1.0f);
+	const float DamageAmount = FMath::Max(CurrentHealth, MaxHealth);
+	CurrentHealth = 0.0f;
+
+	OnRunnerHealthChanged.Broadcast(CurrentHealth, MaxHealth);
+	BP_OnRunnerHealthChanged(CurrentHealth, MaxHealth);
+
+	OnRunnerDamageTaken.Broadcast(DamageAmount, CurrentHealth, MaxHealth, DamageType, DamageCauser);
+	BP_OnRunnerDamageTaken(DamageAmount, CurrentHealth, MaxHealth, DamageType, DamageCauser);
+
+	OnRunnerDied.Broadcast(DamageType, DamageCauser);
+	BP_OnRunnerDied(DamageType, DamageCauser);
+
+	return true;
 }
 
 void APolar_Bear_RunnerCharacter::ResetRunnerHealth(bool bRevive)
@@ -227,6 +260,7 @@ void APolar_Bear_RunnerCharacter::RespawnPlayer()
 	// Ensure the character is enabled
 	SetActorEnableCollision(true);
 	SetActorHiddenInGame(false);
+	GetCharacterMovement()->SetMovementMode(MOVE_Walking);
 
 	// Reset velocity
 	GetCharacterMovement()->Velocity = FVector::ZeroVector;

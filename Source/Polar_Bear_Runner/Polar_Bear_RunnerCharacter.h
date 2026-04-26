@@ -111,9 +111,13 @@ public:
 	UFUNCTION(BlueprintCallable, Category="Runner|Damage")
 	virtual bool RequestDamageFromMissedKey(float DamageOverride = -1.0f, AActor* DamageCauser = nullptr);
 
-	/** Applies default (or overridden) damage for hitting an obstacle. */
+	/** Kills the runner for obstacle hits. DamageOverride is ignored so obstacle contact is always lethal. */
 	UFUNCTION(BlueprintCallable, Category="Runner|Damage")
 	virtual bool RequestDamageFromObstacle(float DamageOverride = -1.0f, AActor* DamageCauser = nullptr);
+
+	/** Kills the runner immediately, bypassing damage cooldown. */
+	UFUNCTION(BlueprintCallable, Category="Runner|Damage")
+	virtual bool KillRunner(ERunnerDamageType DamageType, AActor* DamageCauser = nullptr);
 
 	/** Resets health (and optionally revive state) between runs/checkpoints. */
 	UFUNCTION(BlueprintCallable, Category="Runner|Damage")
@@ -184,13 +188,14 @@ protected:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Runner|Damage", meta=(ClampMin="0.0", UIMin="0.0"))
 	float MissedKeyDamage = 10.0f;
 
-	/** Damage applied when colliding with obstacles and no override is provided. */
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Runner|Damage", meta=(ClampMin="0.0", UIMin="0.0"))
-	float ObstacleHitDamage = 20.0f;
+	/** If true, repeated damage can be throttled by DamageCooldownSeconds. */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Runner|Damage")
+	bool bUseDamageCooldown = false;
 
-	/** Small grace period to avoid duplicate hit events in the same instant. */
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Runner|Damage", meta=(ClampMin="0.0", UIMin="0.0"))
-	float DamageCooldownSeconds = 0.1f;
+	/** Optional grace period to avoid duplicate hit events in the same instant. Ignored unless Use Damage Cooldown is enabled. */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Runner|Damage",
+	          meta=(EditCondition="bUseDamageCooldown", ClampMin="0.0", UIMin="0.0"))
+	float DamageCooldownSeconds = 0.0f;
 
 	/** True once runner has no health left. */
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Runner|Damage")
