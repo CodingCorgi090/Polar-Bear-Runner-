@@ -16,7 +16,8 @@ class APolar_Bear_RunnerCharacter;
  *  - Drop it into any level and it will automatically call
  *    RequestDamageFromObstacle() on APolar_Bear_RunnerCharacter.
  *  - Set DamageOverride > 0 to use a custom damage value instead of
- *    the character's default ObstacleHitDamage.
+ *    the character's default ObstacleHitDamage, or keep bKillPlayerOnOverlap
+ *    enabled for instant-death hazards that trigger respawn.
  *  - Enable bDestroyOnHit to make single-use hazards.
  *  - Implement BP_OnPlayerHit / BP_OnPlayerHitBlocked in Blueprint
  *    for VFX, SFX, or any other feedback.
@@ -62,6 +63,10 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Runner|Obstacle|Damage")
 	bool bDamagePlayerOnOverlap = true;
 
+	/** If true, this obstacle deals enough damage to kill the runner and trigger respawn. */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Runner|Obstacle|Damage")
+	bool bKillPlayerOnOverlap = true;
+
 	/** Damage to deal. When <= 0 the character's default ObstacleHitDamage is used. */
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Runner|Obstacle|Damage",
 	          meta=(ClampMin="0.0", UIMin="0.0", ToolTip="0 uses the runner's ObstacleHitDamage value. Any value above 0 overrides it for this obstacle."))
@@ -75,9 +80,9 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Runner|Obstacle")
 	bool bIsActive = true;
 
-	/** Optional mesh override; leave null to keep the mesh configured on the Blueprint ObstacleMesh component. */
+	/** Optional mesh override; leave null for no C++ default so the Blueprint can choose its own mesh. */
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Runner|Obstacle|Visual")
-	UStaticMesh* ObstacleMeshAsset = nullptr;
+	TObjectPtr<UStaticMesh> ObstacleMeshAsset = nullptr;
 
 	// ── Blueprint hooks ────────────────────────────────────────────────────────
 

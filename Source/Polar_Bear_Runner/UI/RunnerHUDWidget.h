@@ -1,4 +1,4 @@
-﻿#pragma once
+#pragma once
 
 #include "CoreMinimal.h"
 #include "Blueprint/UserWidget.h"
@@ -21,6 +21,9 @@ public:
 
 	UFUNCTION(BlueprintCallable, Category="Runner|UI")
 	void ShowGameOver(float FinalHealth, float InMaxHealth);
+
+	UFUNCTION(BlueprintCallable, Category="Runner|UI")
+	void HideGameOver();
 
 	UFUNCTION(BlueprintPure, Category="Runner|UI")
 	float GetHealthPercent() const;
@@ -59,4 +62,3 @@ protected:
 	UPROPERTY(meta = (BindWidget))
 	UTextBlock* ScoreBlock;
 };
-

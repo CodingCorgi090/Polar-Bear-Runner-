@@ -1,4 +1,4 @@
-﻿#include "UI/RunnerHUDWidget.h"
+#include "UI/RunnerHUDWidget.h"
 #include "Math/UnrealMathUtility.h"
 
 void URunnerHUDWidget::UpdateHealth(float NewHealth, float InMaxHealth)
@@ -13,6 +13,12 @@ void URunnerHUDWidget::ShowGameOver(float FinalHealth, float InMaxHealth)
 	UpdateHealth(FinalHealth, InMaxHealth);
 	bGameOverShown = true;
 	BP_OnGameOverShown(CurrentHealth, MaxHealth);
+}
+
+void URunnerHUDWidget::HideGameOver()
+{
+	bGameOverShown = false;
+	BP_OnGameOverHidden();
 }
 
 float URunnerHUDWidget::GetHealthPercent() const

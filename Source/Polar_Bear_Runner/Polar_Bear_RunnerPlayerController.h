@@ -4,6 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/PlayerController.h"
+#include "TimerManager.h"
 #include "Polar_Bear_RunnerPlayerController.generated.h"
 
 class UInputMappingContext;
@@ -69,6 +70,10 @@ protected:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Runner|UI", meta=(ClampMin="0.05", ClampMax="1.0", UIMin="0.05", UIMax="1.0"))
 	float DeathTimeDilation = 0.2f;
 
+	/** Real-time delay before reviving the runner after death. */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Runner|Respawn", meta=(ClampMin="0.0", UIMin="0.0", Units="s"))
+	float RespawnDelaySeconds = 1.0f;
+
 	UFUNCTION()
 	void HandleRunnerHealthChanged(float NewHealth, float MaxHealth);
 
@@ -78,6 +83,10 @@ protected:
 	void BindToRunnerCharacter(APolar_Bear_RunnerCharacter* RunnerCharacter);
 
 	void UnbindFromRunnerCharacter(APolar_Bear_RunnerCharacter* RunnerCharacter);
+
+	void RespawnRunnerAfterDeath();
+
+	FTimerHandle RespawnTimerHandle;
 
 public:
 	/** Routes missed-key damage to the currently possessed runner character. */
