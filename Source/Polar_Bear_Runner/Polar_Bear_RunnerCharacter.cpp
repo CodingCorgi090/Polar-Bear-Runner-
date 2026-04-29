@@ -209,3 +209,14 @@ float APolar_Bear_RunnerCharacter::GetHealthPercent() const
 	return MaxHealth > 0.0f ? CurrentHealth / MaxHealth : 0.0f;
 }
 
+// JG
+int APolar_Bear_RunnerCharacter::GetScore() const
+{
+	return Score;
+}
+
+// JG
+void APolar_Bear_RunnerCharacter::AddScore(int Amount)
+{
+	if (OnActorBeginOverlap)
+}

@@ -156,6 +156,18 @@ public:
 	UFUNCTION(BlueprintImplementableEvent, Category="Runner|Events")
 	void BP_OnRunnerDied(ERunnerDamageType DamageType, AActor* DamageCauser);
 
+	UFUNCTION(BlueprintCallable, Category = "Runner|Score")
+	void AddScore(int Amount);
+
+	UFUNCTION(BlueprintCallable, Category = "Runner|Score")
+	int GetScore() const;
+
+	UFUNCTION(BlueprintCallable, Category = "Runner|Score")
+	void ResetScore();
+
+	UFUNCTION(BlueprintCallable, Category = "Runner|Score")
+	void ResetScore();
+
 protected:
 	/** Max health for each run. */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Runner|Damage", meta=(ClampMin="1.0", UIMin="1.0"))
@@ -180,6 +192,9 @@ protected:
 	/** True once runner has no health left. */
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Runner|Damage")
 	bool bIsDead = false;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Runner|Score")
+	int Score = 0;
 
 private:
 	float LastDamageTimeSeconds = -1.0f;
