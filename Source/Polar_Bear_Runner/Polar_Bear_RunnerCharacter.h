@@ -174,6 +174,22 @@ public:
 	/** BP hook for game over flow. */
 	UFUNCTION(BlueprintImplementableEvent, Category="Runner|Events")
 	void BP_OnRunnerDied(ERunnerDamageType DamageType, AActor* DamageCauser);
+	
+	//Adds the increment amount to the current score
+	UFUNCTION(BlueprintCallable, Category = "Runner|Score")
+	bool AddScore(int32 const Amount);
+	
+	/** BP hook for game over flow. */
+	UFUNCTION(BlueprintImplementableEvent, Category="Runner|Events")
+	void BP_OnScoreChanged(int NewScore);
+	
+	//Returns the current score
+	UFUNCTION(BlueprintCallable, Category = "Runner|Score")
+	int GetScore() const;
+
+	//Resets the score... may be unnecessary at this stage
+	UFUNCTION(BlueprintCallable, Category = "Runner|Score")
+	void ResetScore();
 
 protected:
 	/** Max health for each run. */
@@ -201,6 +217,9 @@ protected:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Runner|Damage")
 	bool bIsDead = false;
 
+	//Player score
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Runner|Score")
+	int Score = 0;
 	/** Optional spawn point reference. Assign this on the Character Blueprint or placed instance to control respawn.
 	 *  If left unset, the runner respawns at its starting transform.
 	 */

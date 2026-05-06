@@ -1,11 +1,11 @@
 ﻿// Copyright Epic Games, Inc. All Rights Reserved.
 
 #include "RunnerKeyPickup.h"
-
 #include "Components/BoxComponent.h"
 #include "Components/StaticMeshComponent.h"
 #include "Polar_Bear_Runner.h"
 #include "Polar_Bear_RunnerCharacter.h"
+#include "Polar_Bear_RunnerPlayerController.h"
 #include "UObject/ConstructorHelpers.h"
 
 ARunnerKeyPickup::ARunnerKeyPickup()
@@ -80,8 +80,26 @@ bool ARunnerKeyPickup::TryCollect(AActor* OtherActor)
 	UE_LOG(LogPolar_Bear_Runner, Log, TEXT("RunnerKeyPickup '%s' collected by '%s' for value %d."),
 		*GetNameSafe(this), *GetNameSafe(Runner), KeyValue);
 
-	OnKeyCollected.Broadcast(Runner, KeyValue, this);
-	BP_OnKeyCollected(Runner, KeyValue, this);
+	//OnKeyCollected.Broadcast(Runner, KeyValue, this);
+	//BP_OnKeyCollected(Runner, KeyValue, this);
+	
+	//Gets the controller
+	APolar_Bear_RunnerPlayerController* Controller = Cast<APolar_Bear_RunnerPlayerController>(Runner->GetController());
+	
+	//If there's a collision with a key, add to the score
+	//Returns bool
+	if (Runner->AddScore(1))
+	{
+		//If score was updated, then get the new score for the UI
+		int32 const NewScore = Runner->GetScore();
+		
+		//The controller handles the HUD
+		//Report that the score has been changed if the controller exists
+		if (Controller)
+		{
+			Controller->ReportScoreChange(NewScore);
+		}
+	}
 
 	if (bDestroyOnCollect)
 	{

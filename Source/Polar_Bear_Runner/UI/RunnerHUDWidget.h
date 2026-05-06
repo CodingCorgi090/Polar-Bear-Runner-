@@ -2,7 +2,9 @@
 
 #include "CoreMinimal.h"
 #include "Blueprint/UserWidget.h"
+#include "Components/TextBlock.h"
 #include "RunnerHUDWidget.generated.h"
+
 
 /**
  * Lightweight C++ base widget for runner health/game-over UI.
@@ -35,6 +37,14 @@ public:
 	UFUNCTION(BlueprintImplementableEvent, Category="Runner|UI")
 	void BP_OnGameOverShown(float FinalHealth, float InMaxHealth);
 
+	// Updates the player UI score
+	UFUNCTION(BlueprintCallable, Category = "Runner|UI")
+	void UpdateScore(int32 const NewScore);
+	
+	// Blueprint event to use to update UI score
+	UFUNCTION(BlueprintImplementableEvent, Category="Runner|UI")
+	void BP_OnScoreUpdated(int32 const ScoreDisplay);
+	
 	UFUNCTION(BlueprintImplementableEvent, Category="Runner|UI")
 	void BP_OnGameOverHidden();
 
@@ -47,4 +57,11 @@ protected:
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Runner|UI")
 	bool bGameOverShown = false;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Runner|UI")
+	int CurrentScore = 0;
+	
+	UPROPERTY(meta = (BindWidget))
+	UTextBlock* ScoreBlock;
 };
+

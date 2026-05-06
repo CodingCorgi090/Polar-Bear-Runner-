@@ -82,8 +82,12 @@ public:
 	UFUNCTION(BlueprintCallable, Category="Runner|Damage")
 	bool ReportMissedKeyDamage(float DamageOverride = -1.0f, AActor* DamageCauser = nullptr);
 
-	/** Kills the currently possessed runner character for obstacle hits. */
+	/** Routes obstacle-hit damage to the currently possessed runner character. */
 	UFUNCTION(BlueprintCallable, Category="Runner|Damage")
 	bool ReportObstacleDamage(float DamageOverride = -1.0f, AActor* DamageCauser = nullptr);
+	
+	//Hands the new score to the HUD
+	UFUNCTION(BlueprintCallable, Category = "Runner|Score")
+	void ReportScoreChange(int32 const Score);
 
 };

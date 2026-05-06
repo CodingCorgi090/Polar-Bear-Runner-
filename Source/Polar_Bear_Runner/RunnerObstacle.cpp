@@ -4,6 +4,7 @@
 #include "Polar_Bear_RunnerCharacter.h"
 #include "Components/StaticMeshComponent.h"
 #include "Components/BoxComponent.h"
+#include "UObject/ConstructorHelpers.h"
 #include "Engine/StaticMesh.h"
 #include "Polar_Bear_Runner.h"
 
