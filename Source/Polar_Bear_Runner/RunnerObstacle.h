@@ -14,9 +14,7 @@ class APolar_Bear_RunnerCharacter;
  *  A placeable obstacle that damages the player on contact.
  *
  *  - Drop it into any level and it will automatically call
- *    RequestDamageFromObstacle() on APolar_Bear_RunnerCharacter.
- *  - Set DamageOverride > 0 to use a custom damage value instead of
- *    the character's default ObstacleHitDamage.
+ *    KillRunner() on APolar_Bear_RunnerCharacter.
  *  - Enable bDestroyOnHit to make single-use hazards.
  *  - Implement BP_OnPlayerHit / BP_OnPlayerHitBlocked in Blueprint
  *    for VFX, SFX, or any other feedback.
@@ -48,11 +46,14 @@ protected:
 
 	virtual void BeginPlay() override;
 
-	/** Bound to HitBox's OnComponentBeginOverlap */
+	/** Bound to damage collision component overlaps. */
 	UFUNCTION()
-	void OnHitBoxOverlapBegin(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor,
+	void OnDamageOverlapBegin(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor,
 	                          UPrimitiveComponent* OtherComp, int32 OtherBodyIndex,
 	                          bool bFromSweep, const FHitResult& SweepResult);
+
+	void ConfigureDamageCollision();
+	void UpdateHitBoxFromMeshBounds();
 
 public:
 
@@ -62,22 +63,26 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Runner|Obstacle|Damage")
 	bool bDamagePlayerOnOverlap = true;
 
-	/** Damage to deal. When <= 0 the character's default ObstacleHitDamage is used. */
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Runner|Obstacle|Damage",
-	          meta=(ClampMin="0.0", UIMin="0.0", ToolTip="0 uses the runner's ObstacleHitDamage value. Any value above 0 overrides it for this obstacle."))
-	float DamageOverride = 0.0f;
-
 	/** If true, the obstacle destroys itself after hitting the player once. */
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Runner|Obstacle|Damage")
 	bool bDestroyOnHit = false;
+
+	/** If true, the damage hit box is resized to match the assigned mesh bounds. */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Runner|Obstacle|Collision")
+	bool bAutoSizeHitBoxToMesh = true;
+
+	/** Extra size added to the auto-fitted damage hit box. */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Runner|Obstacle|Collision",
+	          meta=(EditCondition="bAutoSizeHitBoxToMesh", ClampMin="0.0", UIMin="0.0"))
+	FVector HitBoxPadding = FVector(10.0f, 10.0f, 10.0f);
 
 	/** Toggle to temporarily disable this obstacle without removing it from the level. */
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Runner|Obstacle")
 	bool bIsActive = true;
 
-	/** Optional mesh override; leave null to keep the mesh configured on the Blueprint ObstacleMesh component. */
+	/** Optional mesh override; leave null for no C++ default so the Blueprint can choose its own mesh. */
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Runner|Obstacle|Visual")
-	UStaticMesh* ObstacleMeshAsset = nullptr;
+	TObjectPtr<UStaticMesh> ObstacleMeshAsset = nullptr;
 
 	// ── Blueprint hooks ────────────────────────────────────────────────────────
 

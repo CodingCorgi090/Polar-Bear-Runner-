@@ -12,6 +12,9 @@ class UCameraComponent;
 class UInputAction;
 struct FInputActionValue;
 
+// Forward declare the spawn point actor so designers can assign it in Blueprints
+class ARunnerSpawnPoint;
+
 DECLARE_LOG_CATEGORY_EXTERN(LogTemplateCharacter, Log, All);
 
 UENUM(BlueprintType)
@@ -108,13 +111,29 @@ public:
 	UFUNCTION(BlueprintCallable, Category="Runner|Damage")
 	virtual bool RequestDamageFromMissedKey(float DamageOverride = -1.0f, AActor* DamageCauser = nullptr);
 
-	/** Applies default (or overridden) damage for hitting an obstacle. */
+	/** Kills the runner for obstacle hits. DamageOverride is ignored so obstacle contact is always lethal. */
 	UFUNCTION(BlueprintCallable, Category="Runner|Damage")
 	virtual bool RequestDamageFromObstacle(float DamageOverride = -1.0f, AActor* DamageCauser = nullptr);
+
+	/** Kills the runner immediately, bypassing damage cooldown. */
+	UFUNCTION(BlueprintCallable, Category="Runner|Damage")
+	virtual bool KillRunner(ERunnerDamageType DamageType, AActor* DamageCauser = nullptr);
 
 	/** Resets health (and optionally revive state) between runs/checkpoints. */
 	UFUNCTION(BlueprintCallable, Category="Runner|Damage")
 	virtual void ResetRunnerHealth(bool bRevive = true);
+
+	/** Respawns the player at the initial location, resetting health and state. */
+	UFUNCTION(BlueprintCallable, Category="Runner|Respawn")
+	virtual void RespawnPlayer();
+
+	/** Sets the actor used as this runner's respawn location. */
+	UFUNCTION(BlueprintCallable, Category="Runner|Respawn")
+	virtual void SetRespawnPoint(ARunnerSpawnPoint* NewSpawnPoint);
+
+	/** Returns the currently assigned respawn point, if any. */
+	UFUNCTION(BlueprintPure, Category="Runner|Respawn")
+	ARunnerSpawnPoint* GetRespawnPoint() const { return AssignedSpawnPoint; }
 
 	/** Returns current normalized health from 0.0 to 1.0. */
 	UFUNCTION(BlueprintPure, Category="Runner|Damage")
@@ -185,13 +204,14 @@ protected:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Runner|Damage", meta=(ClampMin="0.0", UIMin="0.0"))
 	float MissedKeyDamage = 10.0f;
 
-	/** Damage applied when colliding with obstacles and no override is provided. */
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Runner|Damage", meta=(ClampMin="0.0", UIMin="0.0"))
-	float ObstacleHitDamage = 20.0f;
+	/** If true, repeated damage can be throttled by DamageCooldownSeconds. */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Runner|Damage")
+	bool bUseDamageCooldown = false;
 
-	/** Small grace period to avoid duplicate hit events in the same instant. */
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Runner|Damage", meta=(ClampMin="0.0", UIMin="0.0"))
-	float DamageCooldownSeconds = 0.1f;
+	/** Optional grace period to avoid duplicate hit events in the same instant. Ignored unless Use Damage Cooldown is enabled. */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Runner|Damage",
+	          meta=(EditCondition="bUseDamageCooldown", ClampMin="0.0", UIMin="0.0"))
+	float DamageCooldownSeconds = 0.0f;
 
 	/** True once runner has no health left. */
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Runner|Damage")
@@ -200,6 +220,14 @@ protected:
 	//Player score
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Runner|Score")
 	int Score = 0;
+	/** Optional spawn point reference. Assign this on the Character Blueprint or placed instance to control respawn.
+	 *  If left unset, the runner respawns at its starting transform.
+	 */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Runner|Respawn", meta=(AllowPrivateAccess="true"))
+	TObjectPtr<ARunnerSpawnPoint> AssignedSpawnPoint = nullptr;
+
+	/** Initial transform for respawning (cached). */
+	FTransform InitialTransform;
 
 private:
 	float LastDamageTimeSeconds = -1.0f;

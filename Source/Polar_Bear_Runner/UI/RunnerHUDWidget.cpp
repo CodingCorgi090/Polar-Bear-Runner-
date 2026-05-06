@@ -15,11 +15,6 @@ void URunnerHUDWidget::ShowGameOver(float FinalHealth, float InMaxHealth)
 	BP_OnGameOverShown(CurrentHealth, MaxHealth);
 }
 
-float URunnerHUDWidget::GetHealthPercent() const
-{
-	return MaxHealth > 0.0f ? CurrentHealth / MaxHealth : 0.0f;
-}
-
 // Updates the score on the UI
 void URunnerHUDWidget::UpdateScore(int32 const NewScore)
 {
@@ -40,3 +35,13 @@ void URunnerHUDWidget::UpdateScore(int32 const NewScore)
 }
 
 
+void URunnerHUDWidget::HideGameOver()
+{
+	bGameOverShown = false;
+	BP_OnGameOverHidden();
+}
+
+float URunnerHUDWidget::GetHealthPercent() const
+{
+	return MaxHealth > 0.0f ? CurrentHealth / MaxHealth : 0.0f;
+}

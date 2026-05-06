@@ -65,10 +65,6 @@ protected:
 	UPROPERTY(BlueprintReadOnly, Category="Runner|UI")
 	TObjectPtr<URunnerHUDWidget> RunnerHUDWidget;
 
-	/** Time dilation applied on death to accent game over before restart. */
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Runner|UI", meta=(ClampMin="0.05", ClampMax="1.0", UIMin="0.05", UIMax="1.0"))
-	float DeathTimeDilation = 0.2f;
-
 	UFUNCTION()
 	void HandleRunnerHealthChanged(float NewHealth, float MaxHealth);
 
@@ -78,6 +74,8 @@ protected:
 	void BindToRunnerCharacter(APolar_Bear_RunnerCharacter* RunnerCharacter);
 
 	void UnbindFromRunnerCharacter(APolar_Bear_RunnerCharacter* RunnerCharacter);
+
+	void RespawnRunnerAfterDeath();
 
 public:
 	/** Routes missed-key damage to the currently possessed runner character. */
