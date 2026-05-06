@@ -47,6 +47,7 @@ APolar_Bear_RunnerCharacter::APolar_Bear_RunnerCharacter()
 	FollowCamera->SetupAttachment(CameraBoom, USpringArmComponent::SocketName);
 	FollowCamera->bUsePawnControlRotation = false;
 
+
 	// Note: The skeletal mesh and anim blueprint references on the Mesh component (inherited from Character) 
 	// are set in the derived blueprint asset named ThirdPersonCharacter (to avoid direct content references in C++)
 }
@@ -56,6 +57,7 @@ void APolar_Bear_RunnerCharacter::BeginPlay()
 	Super::BeginPlay();
 
 	ResetRunnerHealth(true);
+
 }
 
 void APolar_Bear_RunnerCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
@@ -209,14 +211,29 @@ float APolar_Bear_RunnerCharacter::GetHealthPercent() const
 	return MaxHealth > 0.0f ? CurrentHealth / MaxHealth : 0.0f;
 }
 
-// JG
+// Return the player score
 int APolar_Bear_RunnerCharacter::GetScore() const
 {
 	return Score;
 }
 
-// JG
-void APolar_Bear_RunnerCharacter::AddScore(int Amount)
+// Adds the increment to the current score and saves the result
+// as the new score
+bool APolar_Bear_RunnerCharacter::AddScore(int32 const Amount)
 {
-	if (OnActorBeginOverlap)
+	// Verify that there is a positive increment, then calculate
+	if (Amount >= 1) {
+		Score += Amount;
+		return true;
+	}
+	else {
+		return false;
+	}
 }
+
+// Sets the score to 0 
+void APolar_Bear_RunnerCharacter::ResetScore()
+{
+	Score = 0;
+}
+

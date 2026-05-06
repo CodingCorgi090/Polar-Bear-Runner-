@@ -155,16 +155,20 @@ public:
 	/** BP hook for game over flow. */
 	UFUNCTION(BlueprintImplementableEvent, Category="Runner|Events")
 	void BP_OnRunnerDied(ERunnerDamageType DamageType, AActor* DamageCauser);
-
+	
+	//Adds the increment amount to the current score
 	UFUNCTION(BlueprintCallable, Category = "Runner|Score")
-	void AddScore(int Amount);
-
+	bool AddScore(int32 const Amount);
+	
+	/** BP hook for game over flow. */
+	UFUNCTION(BlueprintImplementableEvent, Category="Runner|Events")
+	void BP_OnScoreChanged(int NewScore);
+	
+	//Returns the current score
 	UFUNCTION(BlueprintCallable, Category = "Runner|Score")
 	int GetScore() const;
 
-	UFUNCTION(BlueprintCallable, Category = "Runner|Score")
-	void ResetScore();
-
+	//Resets the score... may be unnecessary at this stage
 	UFUNCTION(BlueprintCallable, Category = "Runner|Score")
 	void ResetScore();
 
@@ -193,6 +197,7 @@ protected:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Runner|Damage")
 	bool bIsDead = false;
 
+	//Player score
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Runner|Score")
 	int Score = 0;
 

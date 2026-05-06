@@ -23,6 +23,7 @@ void APolar_Bear_RunnerPlayerController::BeginPlay()
 		if (RunnerHUDWidget)
 		{
 			RunnerHUDWidget->AddToPlayerScreen(1);
+			RunnerHUDWidget->UpdateScore(0);
 		}
 	}
 
@@ -46,6 +47,7 @@ void APolar_Bear_RunnerPlayerController::BeginPlay()
 	}
 
 	BindToRunnerCharacter(Cast<APolar_Bear_RunnerCharacter>(GetPawn()));
+	
 }
 
 void APolar_Bear_RunnerPlayerController::OnPossess(APawn* InPawn)
@@ -166,7 +168,7 @@ void APolar_Bear_RunnerPlayerController::BindToRunnerCharacter(APolar_Bear_Runne
 	UnbindFromRunnerCharacter(RunnerCharacter);
 	RunnerCharacter->OnRunnerHealthChanged.AddDynamic(this, &APolar_Bear_RunnerPlayerController::HandleRunnerHealthChanged);
 	RunnerCharacter->OnRunnerDied.AddDynamic(this, &APolar_Bear_RunnerPlayerController::HandleRunnerDied);
-
+	
 	HandleRunnerHealthChanged(RunnerCharacter->GetCurrentHealth(), RunnerCharacter->GetMaxHealthValue());
 }
 
@@ -181,3 +183,15 @@ void APolar_Bear_RunnerPlayerController::UnbindFromRunnerCharacter(APolar_Bear_R
 	RunnerCharacter->OnRunnerDied.RemoveDynamic(this, &APolar_Bear_RunnerPlayerController::HandleRunnerDied);
 }
 
+// Used to pass an updated score to the UI
+void APolar_Bear_RunnerPlayerController::ReportScoreChange(int32 const Score)
+{	
+	//Passes the new score to the HUD widget instance if it exists
+	if (RunnerHUDWidget) 
+	{
+		RunnerHUDWidget->UpdateScore(Score);
+	}
+
+
+
+}
