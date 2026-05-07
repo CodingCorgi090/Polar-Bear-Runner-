@@ -340,7 +340,3 @@ void APolar_Bear_RunnerCharacter::SetRespawnPoint(ARunnerSpawnPoint* NewSpawnPoi
 	InitialTransform = GetActorTransform();
 }
 
-float APolar_Bear_RunnerCharacter::GetHealthPercent() const
-{
-	return MaxHealth > 0.0f ? CurrentHealth / MaxHealth : 0.0f;
-}
