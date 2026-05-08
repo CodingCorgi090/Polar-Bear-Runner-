@@ -45,3 +45,13 @@ void URunnerHUDWidget::UpdateScore(int32 const NewScore)
 }
 
 
+void URunnerHUDWidget::HideGameOver()
+{
+	bGameOverShown = false;
+	BP_OnGameOverHidden();
+}
+
+float URunnerHUDWidget::GetHealthPercent() const
+{
+	return MaxHealth > 0.0f ? CurrentHealth / MaxHealth : 0.0f;
+}

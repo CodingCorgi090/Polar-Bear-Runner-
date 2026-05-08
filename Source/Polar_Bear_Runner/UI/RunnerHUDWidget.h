@@ -48,6 +48,8 @@ public:
 	UFUNCTION(BlueprintImplementableEvent, Category="Runner|UI")
 	void BP_OnScoreUpdated(int32 const ScoreDisplay);
 	
+	UFUNCTION(BlueprintImplementableEvent, Category="Runner|UI")
+	void BP_OnGameOverHidden();
 
 protected:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Runner|UI")

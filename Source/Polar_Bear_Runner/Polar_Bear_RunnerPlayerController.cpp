@@ -50,7 +50,6 @@ void APolar_Bear_RunnerPlayerController::BeginPlay()
 
 	UE_LOG(LogPolar_Bear_Runner, Log, TEXT("PlayerController binding to runner character."));
 	BindToRunnerCharacter(Cast<APolar_Bear_RunnerCharacter>(GetPawn()));
-	
 }
 
 void APolar_Bear_RunnerPlayerController::OnPossess(APawn* InPawn)
