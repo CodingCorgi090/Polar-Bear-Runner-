@@ -41,8 +41,7 @@ void URunnerHUDWidget::UpdateScore(int32 const NewScore)
 		ScoreBlock->SetText(ScoreDisplayComplete);
 	}
 	
-	// Updates blueprint event... not currently used
-	// BP_OnScoreUpdated(NewScore);
+	BP_OnScoreUpdated(NewScore);
 }
 
 

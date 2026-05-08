@@ -127,6 +127,12 @@ void APolar_Bear_RunnerPlayerController::HandleRunnerHealthChanged(float NewHeal
 	}
 }
 
+void APolar_Bear_RunnerPlayerController::HandleRunnerScoreChanged(int32 NewScore, int32 Delta)
+{
+	(void)Delta;
+	ReportScoreChange(NewScore);
+}
+
 void APolar_Bear_RunnerPlayerController::HandleRunnerDied(ERunnerDamageType DamageType, AActor* DamageCauser)
 {
 	(void)DamageCauser;
@@ -207,8 +213,10 @@ void APolar_Bear_RunnerPlayerController::BindToRunnerCharacter(APolar_Bear_Runne
 	UnbindFromRunnerCharacter(RunnerCharacter);
 	RunnerCharacter->OnRunnerHealthChanged.AddDynamic(this, &APolar_Bear_RunnerPlayerController::HandleRunnerHealthChanged);
 	RunnerCharacter->OnRunnerDied.AddDynamic(this, &APolar_Bear_RunnerPlayerController::HandleRunnerDied);
+	RunnerCharacter->OnRunnerScoreChanged.AddDynamic(this, &APolar_Bear_RunnerPlayerController::HandleRunnerScoreChanged);
 	
 	HandleRunnerHealthChanged(RunnerCharacter->GetCurrentHealth(), RunnerCharacter->GetMaxHealthValue());
+	HandleRunnerScoreChanged(RunnerCharacter->GetScore(), 0);
 }
 
 void APolar_Bear_RunnerPlayerController::UnbindFromRunnerCharacter(APolar_Bear_RunnerCharacter* RunnerCharacter)
@@ -220,17 +228,14 @@ void APolar_Bear_RunnerPlayerController::UnbindFromRunnerCharacter(APolar_Bear_R
 
 	RunnerCharacter->OnRunnerHealthChanged.RemoveDynamic(this, &APolar_Bear_RunnerPlayerController::HandleRunnerHealthChanged);
 	RunnerCharacter->OnRunnerDied.RemoveDynamic(this, &APolar_Bear_RunnerPlayerController::HandleRunnerDied);
+	RunnerCharacter->OnRunnerScoreChanged.RemoveDynamic(this, &APolar_Bear_RunnerPlayerController::HandleRunnerScoreChanged);
 }
 
 // Used to pass an updated score to the UI
 void APolar_Bear_RunnerPlayerController::ReportScoreChange(int32 const Score)
 {	
-	//Passes the new score to the HUD widget instance if it exists
 	if (RunnerHUDWidget) 
 	{
 		RunnerHUDWidget->UpdateScore(Score);
 	}
-
-
-
 }

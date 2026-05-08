@@ -71,6 +71,9 @@ protected:
 	UFUNCTION()
 	void HandleRunnerDied(ERunnerDamageType DamageType, AActor* DamageCauser);
 
+	UFUNCTION()
+	void HandleRunnerScoreChanged(int32 NewScore, int32 Delta);
+
 	void BindToRunnerCharacter(APolar_Bear_RunnerCharacter* RunnerCharacter);
 
 	void UnbindFromRunnerCharacter(APolar_Bear_RunnerCharacter* RunnerCharacter);

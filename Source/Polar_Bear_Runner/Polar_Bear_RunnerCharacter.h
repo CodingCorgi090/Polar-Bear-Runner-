@@ -28,6 +28,7 @@ enum class ERunnerDamageType : uint8
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_FiveParams(FRunnerDamageTakenSignature, float, DamageAmount, float, NewHealth, float, MaxHealth, ERunnerDamageType, DamageType, AActor*, DamageCauser);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FRunnerHealthChangedSignature, float, NewHealth, float, MaxHealth);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FRunnerDiedSignature, ERunnerDamageType, DamageType, AActor*, DamageCauser);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FRunnerScoreChangedSignature, int32, NewScore, int32, Delta);
 
 /**
  *  A simple player-controllable third person character
@@ -175,19 +176,23 @@ public:
 	UFUNCTION(BlueprintImplementableEvent, Category="Runner|Events")
 	void BP_OnRunnerDied(ERunnerDamageType DamageType, AActor* DamageCauser);
 	
-	//Adds the increment amount to the current score
+	/** Adds the increment amount to the current score and notifies score listeners. */
 	UFUNCTION(BlueprintCallable, Category = "Runner|Score")
 	bool AddScore(int32 const Amount);
 	
-	/** BP hook for game over flow. */
+	/** Fired whenever the score changes. */
+	UPROPERTY(BlueprintAssignable, Category="Runner|Score|Events")
+	FRunnerScoreChangedSignature OnRunnerScoreChanged;
+
+	/** BP hook for score UI/effects. */
 	UFUNCTION(BlueprintImplementableEvent, Category="Runner|Events")
-	void BP_OnScoreChanged(int NewScore);
+	void BP_OnScoreChanged(int32 NewScore);
 	
-	//Returns the current score
-	UFUNCTION(BlueprintCallable, Category = "Runner|Score")
+	/** Returns the current score. */
+	UFUNCTION(BlueprintPure, Category = "Runner|Score")
 	int GetScore() const;
 
-	//Resets the score... may be unnecessary at this stage
+	/** Resets the score to 0 and notifies score listeners if it changed. */
 	UFUNCTION(BlueprintCallable, Category = "Runner|Score")
 	void ResetScore();
 
@@ -232,6 +237,9 @@ protected:
 
 private:
 	float LastDamageTimeSeconds = -1.0f;
+
+	FVector GetGroundedRespawnLocation(const FVector& DesiredLocation) const;
+	void RebuildEndlessCoursesForRespawn() const;
 
 public:
 
