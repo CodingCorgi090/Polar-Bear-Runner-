@@ -3,6 +3,7 @@
 #include "CoreMinimal.h"
 #include "Blueprint/UserWidget.h"
 #include "Components/TextBlock.h"
+#include "Components/ProgressBar.h"
 #include "RunnerHUDWidget.generated.h"
 
 
@@ -47,6 +48,12 @@ public:
 	
 	UFUNCTION(BlueprintImplementableEvent, Category="Runner|UI")
 	void BP_OnGameOverHidden();
+	
+	UFUNCTION(BlueprintCallable, Category="Runner|UI")
+	void UpdateLevel(int32 const NewLevel);
+	
+	UFUNCTION(BlueprintCallable, Category="Runner|UI")
+	void UpdateLevelProgress();
 
 protected:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Runner|UI")
@@ -61,7 +68,16 @@ protected:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Runner|UI")
 	int CurrentScore = 0;
 	
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Runner|UI")
+	int CurrentLevel = 0;
+	
 	UPROPERTY(meta = (BindWidget))
 	UTextBlock* ScoreBlock;
+	
+	UPROPERTY(meta = (BindWidget))
+	UTextBlock* LevelLabel;
+	
+	UPROPERTY(meta = (BindWidget))
+	UProgressBar* LevelProgress;
 };
 

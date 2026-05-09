@@ -89,5 +89,9 @@ public:
 	//Hands the new score to the HUD
 	UFUNCTION(BlueprintCallable, Category = "Runner|Score")
 	void ReportScoreChange(int32 const Score);
+	
+	//Hands the new score to the HUD
+	UFUNCTION(BlueprintCallable, Category = "Runner|Score")
+	void ReportLevelUpdate(int32 const NewLevel);
 
 };

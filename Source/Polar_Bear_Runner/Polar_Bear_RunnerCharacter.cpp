@@ -11,6 +11,7 @@
 #include "EnhancedInputSubsystems.h"
 #include "InputActionValue.h"
 #include "Polar_Bear_Runner.h"
+#include "Polar_Bear_RunnerPlayerController.h"
 #include "Engine/World.h"
 #include "RunnerSpawnPoint.h"
 
@@ -27,12 +28,11 @@ APolar_Bear_RunnerCharacter::APolar_Bear_RunnerCharacter()
 	// Configure character movement
 	GetCharacterMovement()->bOrientRotationToMovement = true;
 	GetCharacterMovement()->RotationRate = FRotator(0.0f, 500.0f, 0.0f);
-
 	// Note: For faster iteration times these variables, and many more, can be tweaked in the Character Blueprint
 	// instead of recompiling to adjust them
 	GetCharacterMovement()->JumpZVelocity = 500.f;
 	GetCharacterMovement()->AirControl = 0.35f;
-	GetCharacterMovement()->MaxWalkSpeed = 500.f;
+	GetCharacterMovement()->MaxWalkSpeed = NewWalkSpeed;
 	GetCharacterMovement()->MinAnalogWalkSpeed = 20.f;
 	GetCharacterMovement()->BrakingDecelerationWalking = 2000.f;
 	GetCharacterMovement()->BrakingDecelerationFalling = 1500.0f;
@@ -58,6 +58,11 @@ void APolar_Bear_RunnerCharacter::BeginPlay()
 	Super::BeginPlay();
 
 	ResetRunnerHealth(true);
+	
+	ResetScore();
+	ResetPlayerLevel();
+	ResetRunnerAccel();
+	
 
 	InitialTransform = GetActorTransform();
 
@@ -258,6 +263,7 @@ float APolar_Bear_RunnerCharacter::GetHealthPercent() const
 {
 	return MaxHealth > 0.0f ? CurrentHealth / MaxHealth : 0.0f;
 }
+ 
 
 // Return the player score
 int APolar_Bear_RunnerCharacter::GetScore() const
@@ -272,6 +278,11 @@ bool APolar_Bear_RunnerCharacter::AddScore(int32 const Amount)
 	// Verify that there is a positive increment, then calculate
 	if (Amount >= 1) {
 		Score += Amount;
+		UE_LOG(LogPolar_Bear_Runner, Log, TEXT("Score changed. New score: %d"), Score);
+		if (Score % 5 == 0)
+		{
+			AddPlayerLevel();
+		}
 		return true;
 	}
 	else {
@@ -338,5 +349,69 @@ void APolar_Bear_RunnerCharacter::SetRespawnPoint(ARunnerSpawnPoint* NewSpawnPoi
 	}
 
 	InitialTransform = GetActorTransform();
+}
+
+// Adds to the players level	
+bool APolar_Bear_RunnerCharacter::AddPlayerLevel()
+{
+	if (PlayerLevel < 15)
+	{
+		PlayerLevel ++;
+		UE_LOG(LogPolar_Bear_Runner, Log, TEXT("Level changed. New level: %d"), PlayerLevel);
+		
+		if (APolar_Bear_RunnerPlayerController* GameController = Cast<APolar_Bear_RunnerPlayerController>(this->GetController()))
+		{
+			GameController->ReportLevelUpdate(PlayerLevel);
+		}
+		
+		ApplyRunnerAccel();
+		return true;
+	}
+	else
+	{
+		return false;
+	}
+	
+}
+
+// Returns the player level
+int32 APolar_Bear_RunnerCharacter::GetPlayerLevel() const
+{
+	return PlayerLevel;
+}
+
+// Sets the level to 0 
+void APolar_Bear_RunnerCharacter::ResetPlayerLevel()
+{
+	PlayerLevel = 0;
+}
+
+
+// used to apply runner accel on level up
+bool APolar_Bear_RunnerCharacter::ApplyRunnerAccel()
+{
+	UE_LOG(LogPolar_Bear_Runner, Log, TEXT("Current walk speed: %f"), NewWalkSpeed);
+	if (NewWalkSpeed < 2000.0f)
+	{
+		NewWalkSpeed += 100;
+		UE_LOG(LogPolar_Bear_Runner, Log, TEXT("New walk speed: %f"), NewWalkSpeed);
+		
+		if (GetCharacterMovement())
+		{
+			GetCharacterMovement()->MaxWalkSpeed = NewWalkSpeed;
+			UE_LOG(LogPolar_Bear_Runner, Log, TEXT("%f applied"), NewWalkSpeed);
+		}
+		return true;
+	}
+	else
+	{
+		return false;
+	}
+}
+
+// Sets the level to 0 
+void APolar_Bear_RunnerCharacter::ResetRunnerAccel()
+{
+	NewWalkSpeed = 500.0f;
 }
 

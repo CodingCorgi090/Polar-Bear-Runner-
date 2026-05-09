@@ -5,6 +5,7 @@
 #include "CoreMinimal.h"
 #include "GameFramework/Character.h"
 #include "Logging/LogMacros.h"
+
 #include "Polar_Bear_RunnerCharacter.generated.h"
 
 class USpringArmComponent;
@@ -86,7 +87,8 @@ protected:
 	virtual void BeginPlay() override;
 
 public:
-
+	
+	//virtual void Tick(float DeltaTime) override;
 	/** Handles move inputs from either controls or UI interfaces */
 	UFUNCTION(BlueprintCallable, Category="Input")
 	virtual void DoMove(float Right, float Forward);
@@ -102,7 +104,15 @@ public:
 	/** Handles jump pressed inputs from either controls or UI interfaces */
 	UFUNCTION(BlueprintCallable, Category="Input")
 	virtual void DoJumpEnd();
-
+	
+	/** Applies damage with shared guardrails (cooldown, dead-state checks, clamping). */
+	UFUNCTION(BlueprintCallable, Category="Runner|Accel")
+	virtual bool ApplyRunnerAccel();
+	
+	/** Applies damage with shared guardrails (cooldown, dead-state checks, clamping). */
+	UFUNCTION(BlueprintCallable, Category="Runner|Accel")
+	virtual void ResetRunnerAccel();
+	
 	/** Applies damage with shared guardrails (cooldown, dead-state checks, clamping). */
 	UFUNCTION(BlueprintCallable, Category="Runner|Damage")
 	virtual bool ApplyRunnerDamage(float DamageAmount, ERunnerDamageType DamageType, AActor* DamageCauser = nullptr);
@@ -179,6 +189,10 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "Runner|Score")
 	bool AddScore(int32 const Amount);
 	
+	//Adds to the player level
+	UFUNCTION(BlueprintCallable, Category = "Runner|Level")
+	bool AddPlayerLevel();
+	
 	/** BP hook for game over flow. */
 	UFUNCTION(BlueprintImplementableEvent, Category="Runner|Events")
 	void BP_OnScoreChanged(int NewScore);
@@ -186,10 +200,18 @@ public:
 	//Returns the current score
 	UFUNCTION(BlueprintCallable, Category = "Runner|Score")
 	int GetScore() const;
-
+	
+	//Adds to the player level
+	UFUNCTION(BlueprintCallable, Category = "Runner|Level")
+	int32 GetPlayerLevel() const;
+	
 	//Resets the score... may be unnecessary at this stage
 	UFUNCTION(BlueprintCallable, Category = "Runner|Score")
 	void ResetScore();
+	
+	//Resets the level
+	UFUNCTION(BlueprintCallable, Category = "Runner|Score")
+	void ResetPlayerLevel();
 
 protected:
 	/** Max health for each run. */
@@ -220,6 +242,10 @@ protected:
 	//Player score
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Runner|Score")
 	int Score = 0;
+	
+	//Player Level
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Runner|Level")
+	int32 PlayerLevel = 0;
 	/** Optional spawn point reference. Assign this on the Character Blueprint or placed instance to control respawn.
 	 *  If left unset, the runner respawns at its starting transform.
 	 */
@@ -231,6 +257,8 @@ protected:
 
 private:
 	float LastDamageTimeSeconds = -1.0f;
+	
+	float NewWalkSpeed = 500.0f;
 
 public:
 

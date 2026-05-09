@@ -24,8 +24,11 @@ void APolar_Bear_RunnerPlayerController::BeginPlay()
 		RunnerHUDWidget = CreateWidget<URunnerHUDWidget>(this, RunnerHUDWidgetClass);
 		if (RunnerHUDWidget)
 		{
+			
 			RunnerHUDWidget->AddToPlayerScreen(1);
 			RunnerHUDWidget->UpdateScore(0);
+			RunnerHUDWidget->UpdateLevelProgress();
+			RunnerHUDWidget->UpdateLevel(0);
 		}
 	}
 
@@ -228,8 +231,18 @@ void APolar_Bear_RunnerPlayerController::ReportScoreChange(int32 const Score)
 	if (RunnerHUDWidget) 
 	{
 		RunnerHUDWidget->UpdateScore(Score);
+		RunnerHUDWidget->UpdateLevelProgress();
 	}
 
 
 
+}
+
+void APolar_Bear_RunnerPlayerController::ReportLevelUpdate(int32 const NewLevel)
+{
+	if (RunnerHUDWidget)
+	{
+		RunnerHUDWidget->UpdateLevel(NewLevel);
+	}
+	
 }
