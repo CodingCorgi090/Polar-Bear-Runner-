@@ -8,6 +8,7 @@
 #include "Engine/StaticMesh.h"
 #include "Polar_Bear_Runner.h"
 #include "Polar_Bear_RunnerCharacter.h"
+#include "Polar_Bear_RunnerPlayerController.h"
 #include "Kismet/GameplayStatics.h"
 #include "UObject/ConstructorHelpers.h"
 
@@ -238,6 +239,15 @@ bool ARunnerKeyPickup::TryCollect(AActor* OtherActor)
 	if (Runner->AddScore(KeyValue))
 	{
 		UE_LOG(LogPolar_Bear_Runner, Log, TEXT("Runner score updated to %d."), Runner->GetScore());
+		//Gets the controller
+		APolar_Bear_RunnerPlayerController* Controller = Cast<APolar_Bear_RunnerPlayerController>(Runner->GetController());
+		int32 const NewScore = Runner->GetScore();
+		//The controller handles the HUD
+		//Report that the score has been changed if the controller exists
+		if (Controller)
+		{
+			Controller->ReportScoreChange(NewScore);
+		}
 	}
 
 	if (bDestroyOnCollect)
