@@ -1,4 +1,6 @@
-#include "UI/RunnerHUDWidget.h"
+﻿#include "UI/RunnerHUDWidget.h"
+
+#include "Polar_Bear_Runner.h"
 #include "Math/UnrealMathUtility.h"
 
 void URunnerHUDWidget::UpdateHealth(float NewHealth, float InMaxHealth)
@@ -42,4 +44,34 @@ void URunnerHUDWidget::UpdateScore(int32 const NewScore)
 	}
 	
 	BP_OnScoreUpdated(NewScore);
+}
+
+// Updates the level on the UI
+void URunnerHUDWidget::UpdateLevel(int32 const NewLevel)
+{
+	// First, update the CurrentScore property on the HUD class instance
+	CurrentLevel = NewLevel;
+	
+	// Formats text to display in the HUD
+	FText const LevelDisplayComplete = FText::Format(FText::FromString("Level {0}"), NewLevel);
+	
+	// Verify that the text block exists and update the HUD score
+	if (LevelLabel)
+	{
+		LevelLabel->SetText(LevelDisplayComplete);
+	}
+	
+}
+
+// Updates the level progress on the UI
+void URunnerHUDWidget::UpdateLevelProgress()
+{
+	UE_LOG(LogPolar_Bear_Runner, Log, TEXT("CurrentScore:  %d"), CurrentScore);
+	
+	float ProgressPercent = FMath::Clamp((CurrentScore % 5 / 5.0f), 0.0f, 1.0f);
+	
+	if (LevelProgress)
+	{
+		LevelProgress->SetPercent(ProgressPercent);
+	}
 }
