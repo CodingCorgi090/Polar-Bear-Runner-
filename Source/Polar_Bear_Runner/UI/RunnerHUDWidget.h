@@ -1,4 +1,4 @@
-﻿#pragma once
+#pragma once
 
 #include "CoreMinimal.h"
 #include "Blueprint/UserWidget.h"
@@ -38,6 +38,9 @@ public:
 	UFUNCTION(BlueprintImplementableEvent, Category="Runner|UI")
 	void BP_OnGameOverShown(float FinalHealth, float InMaxHealth);
 
+	UFUNCTION(BlueprintImplementableEvent, Category="Runner|UI")
+	void BP_OnGameOverHidden();
+
 	// Updates the player UI score
 	UFUNCTION(BlueprintCallable, Category = "Runner|UI")
 	void UpdateScore(int32 const NewScore);
@@ -66,12 +69,12 @@ protected:
 	bool bGameOverShown = false;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Runner|UI")
-	int CurrentScore = 0;
+	int32 CurrentScore = 0;
 	
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Runner|UI")
 	int CurrentLevel = 0;
 	
-	UPROPERTY(meta = (BindWidget))
+	UPROPERTY(BlueprintReadOnly, Category="Runner|UI", meta = (BindWidgetOptional))
 	UTextBlock* ScoreBlock;
 	
 	UPROPERTY(meta = (BindWidget))
@@ -80,4 +83,3 @@ protected:
 	UPROPERTY(meta = (BindWidget))
 	UProgressBar* LevelProgress;
 };
-

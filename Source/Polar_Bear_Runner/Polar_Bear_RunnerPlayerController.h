@@ -71,6 +71,9 @@ protected:
 	UFUNCTION()
 	void HandleRunnerDied(ERunnerDamageType DamageType, AActor* DamageCauser);
 
+	UFUNCTION()
+	void HandleRunnerScoreChanged(int32 NewScore, int32 Delta);
+
 	void BindToRunnerCharacter(APolar_Bear_RunnerCharacter* RunnerCharacter);
 
 	void UnbindFromRunnerCharacter(APolar_Bear_RunnerCharacter* RunnerCharacter);
@@ -82,7 +85,7 @@ public:
 	UFUNCTION(BlueprintCallable, Category="Runner|Damage")
 	bool ReportMissedKeyDamage(float DamageOverride = -1.0f, AActor* DamageCauser = nullptr);
 
-	/** Routes obstacle-hit damage to the currently possessed runner character. */
+	/** Kills the currently possessed runner character for obstacle hits. */
 	UFUNCTION(BlueprintCallable, Category="Runner|Damage")
 	bool ReportObstacleDamage(float DamageOverride = -1.0f, AActor* DamageCauser = nullptr);
 	
