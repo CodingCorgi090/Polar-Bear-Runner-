@@ -238,6 +238,7 @@ void APolar_Bear_RunnerPlayerController::ReportScoreChange(int32 const Score)
 {	
 	if (RunnerHUDWidget) 
 	{
+		UE_LOG(LogPolar_Bear_Runner, Log, TEXT("HUD Exists!"));
 		RunnerHUDWidget->UpdateScore(Score);
 		RunnerHUDWidget->UpdateLevelProgress();
 	}

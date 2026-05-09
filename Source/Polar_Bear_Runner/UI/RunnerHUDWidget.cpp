@@ -49,6 +49,7 @@ void URunnerHUDWidget::UpdateScore(int32 const NewScore)
 // Updates the level on the UI
 void URunnerHUDWidget::UpdateLevel(int32 const NewLevel)
 {
+	UE_LOG(LogPolar_Bear_Runner, Log, TEXT("CurrentLevel:  %d"), CurrentLevel);
 	// First, update the CurrentScore property on the HUD class instance
 	CurrentLevel = NewLevel;
 	
