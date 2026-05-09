@@ -13,6 +13,7 @@
 #include "Materials/MaterialInterface.h"
 #include "Polar_Bear_Runner.h"
 
+
 namespace
 {
 void ApplyWhiteMaterial(UStaticMeshComponent* MeshComponent, UObject* Owner)
@@ -40,6 +41,7 @@ void ApplyWhiteMaterial(UStaticMeshComponent* MeshComponent, UObject* Owner)
 	MeshComponent->SetMaterial(0, WhiteMaterial);
 }
 }
+
 
 ARunnerObstacle::ARunnerObstacle()
 {

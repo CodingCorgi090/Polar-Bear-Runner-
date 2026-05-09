@@ -261,10 +261,6 @@ protected:
 	/** Initial transform for respawning (cached). */
 	FTransform InitialTransform;
 
-	//Player score
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Runner|Score")
-	int Score = 0;
-
 private:
 	float LastDamageTimeSeconds = -1.0f;
 	

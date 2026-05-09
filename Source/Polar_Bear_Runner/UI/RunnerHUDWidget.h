@@ -49,9 +49,6 @@ public:
 	UFUNCTION(BlueprintImplementableEvent, Category="Runner|UI")
 	void BP_OnScoreUpdated(int32 const ScoreDisplay);
 	
-	UFUNCTION(BlueprintImplementableEvent, Category="Runner|UI")
-	void BP_OnGameOverHidden();
-	
 	UFUNCTION(BlueprintCallable, Category="Runner|UI")
 	void UpdateLevel(int32 const NewLevel);
 	

@@ -420,15 +420,6 @@ bool APolar_Bear_RunnerCharacter::ApplyRunnerAccel()
 void APolar_Bear_RunnerCharacter::ResetRunnerAccel()
 {
 	NewWalkSpeed = 500.0f;
-float APolar_Bear_RunnerCharacter::GetHealthPercent() const
-{
-	return MaxHealth > 0.0f ? CurrentHealth / MaxHealth : 0.0f;
-}
-
-// Return the player score
-int APolar_Bear_RunnerCharacter::GetScore() const
-{
-	return Score;
 }
 
 FVector APolar_Bear_RunnerCharacter::GetGroundedRespawnLocation(const FVector& DesiredLocation) const
