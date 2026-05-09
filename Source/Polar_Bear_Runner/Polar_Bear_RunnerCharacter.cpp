@@ -15,7 +15,6 @@
 #include "EngineUtils.h"
 #include "RunnerEndlessCourse.h"
 #include "RunnerSpawnPoint.h"
-#include "RunnerSpawnPoint.h"
 
 APolar_Bear_RunnerCharacter::APolar_Bear_RunnerCharacter()
 {
@@ -357,58 +356,45 @@ void APolar_Bear_RunnerCharacter::ResetScore()
 	}
 }
 
-void APolar_Bear_RunnerCharacter::RespawnPlayer()
+FVector APolar_Bear_RunnerCharacter::GetGroundedRespawnLocation(const FVector& DesiredLocation) const
 {
-	UE_LOG(LogPolar_Bear_Runner, Log, TEXT("RespawnPlayer called. Initial transform location: %s"), *InitialTransform.GetLocation().ToString());
-
-	// Ensure the character is enabled
-	SetActorEnableCollision(true);
-	SetActorHiddenInGame(false);
-	GetCharacterMovement()->SetMovementMode(MOVE_Walking);
-
-	// Reset velocity
-	GetCharacterMovement()->Velocity = FVector::ZeroVector;
-	GetCharacterMovement()->StopMovementImmediately();
-
-	// Use TeleportTo for proper character movement component handling. If an AssignedSpawnPoint exists use its current transform
-	FTransform SpawnTransform = InitialTransform;
-	if (AssignedSpawnPoint != nullptr)
+	const UWorld* World = GetWorld();
+	if (World == nullptr)
 	{
-		SpawnTransform = AssignedSpawnPoint->GetActorTransform();
-		UE_LOG(LogPolar_Bear_Runner, Log, TEXT("Respawning to AssignedSpawnPoint '%s' at %s"), *GetNameSafe(AssignedSpawnPoint), *SpawnTransform.GetLocation().ToString());
+		return DesiredLocation;
 	}
 
-	FVector SpawnLocation = SpawnTransform.GetLocation();
-	FRotator SpawnRotation = SpawnTransform.Rotator();
+	const float CapsuleHalfHeight = GetCapsuleComponent()
+		? GetCapsuleComponent()->GetScaledCapsuleHalfHeight()
+		: 96.0f;
 
-	if (TeleportTo(SpawnLocation, SpawnRotation))
+	const FVector TraceStart = DesiredLocation + FVector(0.0f, 0.0f, CapsuleHalfHeight + 1000.0f);
+	const FVector TraceEnd = DesiredLocation - FVector(0.0f, 0.0f, 5000.0f);
+
+	FHitResult HitResult;
+	FCollisionQueryParams QueryParams(SCENE_QUERY_STAT(RunnerRespawnGroundTrace), false, this);
+	if (World->LineTraceSingleByChannel(HitResult, TraceStart, TraceEnd, ECC_WorldStatic, QueryParams))
 	{
-		UE_LOG(LogPolar_Bear_Runner, Log, TEXT("Teleport successful to %s"), *GetActorLocation().ToString());
-	}
-	else
-	{
-		UE_LOG(LogPolar_Bear_Runner, Warning, TEXT("Teleport failed! Setting transform directly."));
-		SetActorTransform(SpawnTransform, false, nullptr, ETeleportType::TeleportPhysics);
+		return FVector(DesiredLocation.X, DesiredLocation.Y, HitResult.Location.Z + CapsuleHalfHeight + 2.0f);
 	}
 
-	// Reset health
-	ResetRunnerHealth(true);
-
-	UE_LOG(LogPolar_Bear_Runner, Log, TEXT("RespawnPlayer complete. Current location: %s, Health: %f"), *GetActorLocation().ToString(), CurrentHealth);
+	return DesiredLocation;
 }
 
-void APolar_Bear_RunnerCharacter::SetRespawnPoint(ARunnerSpawnPoint* NewSpawnPoint)
+void APolar_Bear_RunnerCharacter::RebuildEndlessCoursesForRespawn() const
 {
-	AssignedSpawnPoint = NewSpawnPoint;
-
-	if (AssignedSpawnPoint != nullptr)
+	UWorld* World = GetWorld();
+	if (World == nullptr)
 	{
-		InitialTransform = AssignedSpawnPoint->GetActorTransform();
-		UE_LOG(LogPolar_Bear_Runner, Log, TEXT("AssignedSpawnPoint changed to '%s' at %s"),
-		       *GetNameSafe(AssignedSpawnPoint), *InitialTransform.GetLocation().ToString());
 		return;
 	}
 
-	InitialTransform = GetActorTransform();
+	for (TActorIterator<ARunnerEndlessCourse> CourseIt(World); CourseIt; ++CourseIt)
+	{
+		if (ARunnerEndlessCourse* Course = *CourseIt)
+		{
+			Course->RebuildCourse();
+		}
+	}
 }
 

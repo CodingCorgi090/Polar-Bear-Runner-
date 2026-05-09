@@ -234,14 +234,6 @@ protected:
 	//Player score
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Runner|Score")
 	int Score = 0;
-	/** Optional spawn point reference. Assign this on the Character Blueprint or placed instance to control respawn.
-	 *  If left unset, the runner respawns at its starting transform.
-	 */
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Runner|Respawn", meta=(AllowPrivateAccess="true"))
-	TObjectPtr<ARunnerSpawnPoint> AssignedSpawnPoint = nullptr;
-
-	/** Initial transform for respawning (cached). */
-	FTransform InitialTransform;
 
 private:
 	float LastDamageTimeSeconds = -1.0f;

@@ -170,6 +170,10 @@ protected:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Runner|Endless Course|Spawning", meta=(Units="cm"))
 	float ObstacleZOffset = 0.0f;
 
+	/** Minimum air gap under RunnerObstacle actors so square hazards sit above the floor instead of blending into it. */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Runner|Endless Course|Spawning", meta=(ClampMin="0.0", UIMin="0.0", Units="cm"))
+	float ObstacleGroundClearance = 20.0f;
+
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Runner|Endless Course|Random")
 	bool bUseRandomSeed = false;
 

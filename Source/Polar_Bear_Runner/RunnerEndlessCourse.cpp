@@ -6,12 +6,46 @@
 #include "Components/CapsuleComponent.h"
 #include "Components/SceneComponent.h"
 #include "Components/StaticMeshComponent.h"
+#include "Components/TextRenderComponent.h"
 #include "Engine/Blueprint.h"
+#include "Engine/StaticMesh.h"
 #include "Engine/World.h"
 #include "GameFramework/Character.h"
 #include "GameFramework/PlayerController.h"
+#include "Materials/MaterialInstanceDynamic.h"
+#include "Materials/MaterialInterface.h"
 #include "Polar_Bear_RunnerCharacter.h"
 #include "RunnerFloorTile.h"
+#include "RunnerKeyPickup.h"
+#include "RunnerObstacle.h"
+
+namespace
+{
+void ApplyWhiteMaterial(UStaticMeshComponent* MeshComponent, UObject* Owner)
+{
+	if (MeshComponent == nullptr)
+	{
+		return;
+	}
+
+	UMaterialInterface* WhiteBaseMaterial = LoadObject<UMaterialInterface>(nullptr, TEXT("/Engine/BasicShapes/BasicShapeMaterial.BasicShapeMaterial"));
+	if (WhiteBaseMaterial == nullptr)
+	{
+		return;
+	}
+
+	UMaterialInstanceDynamic* WhiteMaterial = UMaterialInstanceDynamic::Create(WhiteBaseMaterial, Owner);
+	if (WhiteMaterial == nullptr)
+	{
+		return;
+	}
+
+	WhiteMaterial->SetVectorParameterValue(TEXT("Color"), FLinearColor::White);
+	WhiteMaterial->SetVectorParameterValue(TEXT("BaseColor"), FLinearColor::White);
+	WhiteMaterial->SetVectorParameterValue(TEXT("Base Color"), FLinearColor::White);
+	MeshComponent->SetMaterial(0, WhiteMaterial);
+}
+}
 
 ARunnerEndlessCourse::ARunnerEndlessCourse()
 {
@@ -309,13 +343,134 @@ void ARunnerEndlessCourse::SpawnActorOnTile(FRunnerCourseTile& Tile, TSubclassOf
 
 	if (AActor* SpawnedActor = SpawnFromClassOrPrefab(ActorClass, ActorPrefab, WorldLocation, WorldRotation))
 	{
+		float EffectiveZOffset = FMath::Max(ZOffset, 0.0f);
+		UPrimitiveComponent* PlacementBoundsComponent = nullptr;
+
+		if (ARunnerKeyPickup* RunnerKey = Cast<ARunnerKeyPickup>(SpawnedActor))
+		{
+			RunnerKey->RefreshKeyShape();
+			EffectiveZOffset = 0.0f;
+			PlacementBoundsComponent = RunnerKey->GetKeyMesh();
+		}
+		else if (ARunnerObstacle* RunnerObstacle = Cast<ARunnerObstacle>(SpawnedActor))
+		{
+			RunnerObstacle->RefreshObstacleShape();
+			EffectiveZOffset = FMath::Max(EffectiveZOffset, ObstacleGroundClearance);
+			PlacementBoundsComponent = RunnerObstacle->GetObstacleMesh();
+		}
+		else
+		{
+			SpawnedActor->SetActorScale3D(FVector::OneVector);
+
+			TArray<UStaticMeshComponent*> MeshComponents;
+			SpawnedActor->GetComponents(MeshComponents);
+
+			UStaticMeshComponent* MainMeshComponent = nullptr;
+			float LargestMeshVolume = -1.0f;
+			for (UStaticMeshComponent* MeshComponent : MeshComponents)
+			{
+				if (!IsValid(MeshComponent) || MeshComponent->GetStaticMesh() == nullptr)
+				{
+					continue;
+				}
+
+				const FVector MeshSize = MeshComponent->GetStaticMesh()->GetBounds().BoxExtent * 2.0f;
+				const FVector ComponentScale = MeshComponent->GetRelativeScale3D().GetAbs();
+				const float MeshVolume = MeshSize.X * ComponentScale.X * MeshSize.Y * ComponentScale.Y * MeshSize.Z * ComponentScale.Z;
+				if (MeshVolume > LargestMeshVolume)
+				{
+					LargestMeshVolume = MeshVolume;
+					MainMeshComponent = MeshComponent;
+				}
+			}
+
+			for (UStaticMeshComponent* MeshComponent : MeshComponents)
+			{
+				if (!IsValid(MeshComponent))
+				{
+					continue;
+				}
+
+				if (MeshComponent != MainMeshComponent)
+				{
+					MeshComponent->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+					MeshComponent->SetGenerateOverlapEvents(false);
+					MeshComponent->SetVisibility(false, true);
+					MeshComponent->SetHiddenInGame(true, true);
+					continue;
+				}
+
+				if (UStaticMesh* CubeMesh = LoadObject<UStaticMesh>(nullptr, TEXT("/Engine/BasicShapes/Cube.Cube")))
+				{
+					MeshComponent->SetStaticMesh(CubeMesh);
+				}
+
+				const FVector MeshSize = MeshComponent->GetStaticMesh()->GetBounds().BoxExtent * 2.0f;
+				const float CubeSize = 150.0f;
+
+				MeshComponent->SetRelativeLocation(FVector::ZeroVector);
+				MeshComponent->SetRelativeScale3D(FVector(
+					MeshSize.X > UE_KINDA_SMALL_NUMBER ? CubeSize / MeshSize.X : 1.0f,
+					MeshSize.Y > UE_KINDA_SMALL_NUMBER ? CubeSize / MeshSize.Y : 1.0f,
+					MeshSize.Z > UE_KINDA_SMALL_NUMBER ? CubeSize / MeshSize.Z : 1.0f));
+				ApplyWhiteMaterial(MeshComponent, SpawnedActor);
+				MeshComponent->SetVisibility(true, true);
+				MeshComponent->SetHiddenInGame(false, true);
+				PlacementBoundsComponent = MeshComponent;
+
+				break;
+			}
+
+			TArray<UTextRenderComponent*> ExistingLabels;
+			SpawnedActor->GetComponents(ExistingLabels);
+			for (UTextRenderComponent* ExistingLabel : ExistingLabels)
+			{
+				if (IsValid(ExistingLabel))
+				{
+					ExistingLabel->SetVisibility(false, true);
+					ExistingLabel->SetHiddenInGame(true, true);
+				}
+			}
+
+			if (USceneComponent* SpawnedRoot = SpawnedActor->GetRootComponent())
+			{
+				UTextRenderComponent* ObstacleLabel = NewObject<UTextRenderComponent>(SpawnedActor, TEXT("GeneratedObstacleLabel"));
+				if (ObstacleLabel)
+				{
+					ObstacleLabel->SetupAttachment(SpawnedRoot);
+					ObstacleLabel->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+					ObstacleLabel->SetGenerateOverlapEvents(false);
+					ObstacleLabel->SetHorizontalAlignment(EHTA_Center);
+					ObstacleLabel->SetVerticalAlignment(EVRTA_TextCenter);
+					ObstacleLabel->SetText(FText::FromString(TEXT("O")));
+					ObstacleLabel->SetTextRenderColor(FColor(230, 80, 50));
+					ObstacleLabel->SetWorldSize(55.0f);
+					ObstacleLabel->SetRelativeLocation(FVector(-77.0f, 0.0f, 0.0f));
+					ObstacleLabel->SetRelativeRotation(FRotator(0.0f, 180.0f, 0.0f));
+					SpawnedActor->AddInstanceComponent(ObstacleLabel);
+					ObstacleLabel->RegisterComponent();
+				}
+			}
+
+			EffectiveZOffset = FMath::Max(EffectiveZOffset, ObstacleGroundClearance);
+		}
+
 		FVector SpawnBoundsOrigin;
 		FVector SpawnBoundsExtent;
-		SpawnedActor->GetActorBounds(false, SpawnBoundsOrigin, SpawnBoundsExtent);
+		if (PlacementBoundsComponent != nullptr)
+		{
+			const FBoxSphereBounds ComponentBounds = PlacementBoundsComponent->Bounds;
+			SpawnBoundsOrigin = ComponentBounds.Origin;
+			SpawnBoundsExtent = ComponentBounds.BoxExtent;
+		}
+		else
+		{
+			SpawnedActor->GetActorBounds(false, SpawnBoundsOrigin, SpawnBoundsExtent);
+		}
 
 		const float FloorWorldZ = GetActorTransform().TransformPosition(CourseLocalOrigin).Z;
 		const float CurrentBottomZ = SpawnBoundsOrigin.Z - SpawnBoundsExtent.Z;
-		const float DesiredBottomZ = FloorWorldZ + FMath::Max(ZOffset, 0.0f);
+		const float DesiredBottomZ = FloorWorldZ + EffectiveZOffset;
 		SpawnedActor->AddActorWorldOffset(FVector(0.0f, 0.0f, DesiredBottomZ - CurrentBottomZ), false, nullptr, ETeleportType::TeleportPhysics);
 
 		Tile.SpawnedActors.Add(SpawnedActor);
@@ -344,6 +499,7 @@ void ARunnerEndlessCourse::EnsureRuntimeDefaults()
 	RandomFloorItemSpawnChance = FMath::Clamp(RandomFloorItemSpawnChance, 0.0f, 1.0f);
 	SafeStartTiles = FMath::Max(SafeStartTiles, 0);
 	MinSpawnDistanceAhead = FMath::Max(MinSpawnDistanceAhead, 0.0f);
+	ObstacleGroundClearance = FMath::Max(ObstacleGroundClearance, 0.0f);
 }
 
 void ARunnerEndlessCourse::ApplyFloorDimensionsFromClass()

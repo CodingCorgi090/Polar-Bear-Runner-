@@ -8,6 +8,8 @@
 
 class UStaticMeshComponent;
 class UBoxComponent;
+class UTextRenderComponent;
+class USceneComponent;
 class APolar_Bear_RunnerCharacter;
 
 /**
@@ -24,6 +26,10 @@ class ARunnerObstacle : public AActor
 {
 	GENERATED_BODY()
 
+	/** Unscaled root so visual sizing does not distort child collision or label text. */
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Components", meta=(AllowPrivateAccess="true"))
+	USceneComponent* SceneRoot;
+
 	/** Visual mesh for the obstacle */
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Components", meta=(AllowPrivateAccess="true"))
 	UStaticMeshComponent* ObstacleMesh;
@@ -32,15 +38,24 @@ class ARunnerObstacle : public AActor
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Components", meta=(AllowPrivateAccess="true"))
 	UBoxComponent* HitBox;
 
+	/** Letter/icon drawn on the player-facing side of the obstacle. */
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Components", meta=(AllowPrivateAccess="true"))
+	UTextRenderComponent* ObstacleLabel;
+
 public:
 
 	ARunnerObstacle();
 
 	virtual void OnConstruction(const FTransform& Transform) override;
+	virtual void Tick(float DeltaSeconds) override;
 
 	/** Attempts to damage the supplied actor if it is the runner character. */
 	UFUNCTION(BlueprintCallable, Category="Runner|Obstacle|Damage")
 	bool TryDamageActor(AActor* OtherActor);
+
+	/** Reapplies the hard-coded endless runner obstacle shape. */
+	UFUNCTION(BlueprintCallable, Category="Runner|Obstacle|Visual")
+	void RefreshObstacleShape();
 
 protected:
 
@@ -53,6 +68,9 @@ protected:
 	                          bool bFromSweep, const FHitResult& SweepResult);
 
 	void ConfigureDamageCollision();
+	void ApplyVisualSettings();
+	void ConfigureLabel();
+	void UpdateLabelFacingPlayer();
 	void UpdateHitBoxFromMeshBounds();
 
 public:
@@ -84,6 +102,40 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Runner|Obstacle|Visual")
 	TObjectPtr<UStaticMesh> ObstacleMeshAsset = nullptr;
 
+	/** If true, the visual mesh is scaled into a cube-like obstacle shape. */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Runner|Obstacle|Visual")
+	bool bMakeObstacleCubeLike = true;
+
+	/** Final visual size used when bMakeObstacleCubeLike is enabled. The largest side is used for all axes so it stays square. */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Runner|Obstacle|Visual",
+	          meta=(EditCondition="bMakeObstacleCubeLike", ClampMin="1.0", UIMin="1.0"))
+	FVector ObstacleVisualSize = FVector(150.0f, 150.0f, 150.0f);
+
+	/** Text shown on the obstacle. */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Runner|Obstacle|Label")
+	FText ObstacleLabelText;
+
+	/** If true, the label rotates so it faces the player/camera side while staying upright. */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Runner|Obstacle|Label")
+	bool bLabelFacesPlayer = false;
+
+	/** Local position of the label. Negative X places it on the side facing the runner. */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Runner|Obstacle|Label")
+	FVector LabelRelativeLocation = FVector(-77.0f, 0.0f, 0.0f);
+
+	/** Height of the rendered label in world units. */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Runner|Obstacle|Label",
+	          meta=(ClampMin="1.0", UIMin="1.0"))
+	float LabelWorldSize = 55.0f;
+
+	/** Color of the rendered label. */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Runner|Obstacle|Label")
+	FColor LabelColor = FColor(230, 80, 50);
+
+	/** Hide this if the mesh/material already has its own readable letter. */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Runner|Obstacle|Label")
+	bool bShowLabel = true;
+
 	// ── Blueprint hooks ────────────────────────────────────────────────────────
 
 	/** Called when the player was successfully hit. Use for VFX / SFX / screen shake. */
@@ -101,6 +153,8 @@ public:
 
 	FORCEINLINE UStaticMeshComponent* GetObstacleMesh() const { return ObstacleMesh; }
 	FORCEINLINE UBoxComponent*        GetHitBox()       const { return HitBox; }
+	FORCEINLINE UTextRenderComponent* GetObstacleLabel() const { return ObstacleLabel; }
+	FORCEINLINE USceneComponent*      GetSceneRoot()    const { return SceneRoot; }
 };
 
 
