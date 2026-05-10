@@ -12,6 +12,7 @@
 #include "UI/RunnerHUDWidget.h"
 #include "Widgets/Input/SVirtualJoystick.h"
 #include "GameFramework/WorldSettings.h"
+#include "Kismet/KismetSystemLibrary.h"
 
 void APolar_Bear_RunnerPlayerController::BeginPlay()
 {
@@ -19,9 +20,15 @@ void APolar_Bear_RunnerPlayerController::BeginPlay()
 
 	UE_LOG(LogPolar_Bear_Runner, Log, TEXT("PlayerController BeginPlay called."));
 
-	if (IsLocalPlayerController() && RunnerHUDWidgetClass)
+	if (IsLocalPlayerController())
 	{
-		RunnerHUDWidget = CreateWidget<URunnerHUDWidget>(this, RunnerHUDWidgetClass);
+		TSubclassOf<URunnerHUDWidget> WidgetClassToCreate = RunnerHUDWidgetClass;
+		if (!WidgetClassToCreate)
+		{
+			WidgetClassToCreate = URunnerHUDWidget::StaticClass();
+		}
+
+		RunnerHUDWidget = CreateWidget<URunnerHUDWidget>(this, WidgetClassToCreate);
 		if (RunnerHUDWidget)
 		{
 			
@@ -64,6 +71,7 @@ void APolar_Bear_RunnerPlayerController::OnPossess(APawn* InPawn)
 
 void APolar_Bear_RunnerPlayerController::OnUnPossess()
 {
+	ClearRespawnCountdown();
 	UnbindFromRunnerCharacter(Cast<APolar_Bear_RunnerCharacter>(GetPawn()));
 	Super::OnUnPossess();
 }
@@ -139,8 +147,16 @@ void APolar_Bear_RunnerPlayerController::HandleRunnerDied(ERunnerDamageType Dama
 {
 	(void)DamageCauser;
 
+	ClearRespawnCountdown();
+	bWaitingForContinueChoice = true;
+
 	SetIgnoreMoveInput(true);
 	SetIgnoreLookInput(true);
+	bShowMouseCursor = true;
+
+	FInputModeUIOnly InputMode;
+	InputMode.SetLockMouseToViewportBehavior(EMouseLockMode::DoNotLock);
+	SetInputMode(InputMode);
 
 	if (DamageType == ERunnerDamageType::ObstacleHit)
 	{
@@ -157,24 +173,104 @@ void APolar_Bear_RunnerPlayerController::HandleRunnerDied(ERunnerDamageType Dama
 		{
 			RunnerHUDWidget->ShowGameOver(RunnerCharacter->GetCurrentHealth(), RunnerCharacter->GetMaxHealthValue());
 		}
+
+		RunnerHUDWidget->ShowContinuePrompt();
 	}
 
 	if (UWorld* World = GetWorld())
 	{
 		World->GetWorldSettings()->SetTimeDilation(1.0f);
 	}
+}
 
-	// Instead of restarting level, respawn the player
-	if (APolar_Bear_RunnerCharacter* RunnerCharacter = Cast<APolar_Bear_RunnerCharacter>(GetPawn()))
+void APolar_Bear_RunnerPlayerController::ContinueAfterDeath()
+{
+	if (bRespawnCountdownActive)
 	{
-		(void)RunnerCharacter;
-		RespawnRunnerAfterDeath();
+		return;
 	}
+
+	if (!bWaitingForContinueChoice)
+	{
+		UE_LOG(LogPolar_Bear_Runner, Warning, TEXT("ContinueAfterDeath called while not waiting for a continue choice."));
+		return;
+	}
+
+	bWaitingForContinueChoice = false;
+	StartRespawnCountdown();
+}
+
+void APolar_Bear_RunnerPlayerController::QuitAfterDeath()
+{
+	ClearRespawnCountdown();
+	bWaitingForContinueChoice = false;
+
+	UE_LOG(LogPolar_Bear_Runner, Log, TEXT("Player chose not to continue. Quitting game."));
+	UKismetSystemLibrary::QuitGame(this, this, EQuitPreference::Quit, false);
+}
+
+void APolar_Bear_RunnerPlayerController::StartRespawnCountdown()
+{
+	UWorld* World = GetWorld();
+	if (!World)
+	{
+		RespawnRunnerAfterDeath();
+		return;
+	}
+
+	bRespawnCountdownActive = true;
+	RespawnCountdownRemaining = FMath::Max(RespawnCountdownSeconds, 1);
+
+	if (RunnerHUDWidget)
+	{
+		RunnerHUDWidget->ShowRespawnCountdown(RespawnCountdownRemaining);
+	}
+
+	World->GetTimerManager().SetTimer(
+		RespawnCountdownTimerHandle,
+		this,
+		&APolar_Bear_RunnerPlayerController::AdvanceRespawnCountdown,
+		1.0f,
+		true);
+}
+
+void APolar_Bear_RunnerPlayerController::AdvanceRespawnCountdown()
+{
+	if (!bRespawnCountdownActive)
+	{
+		return;
+	}
+
+	--RespawnCountdownRemaining;
+
+	if (RespawnCountdownRemaining <= 0)
+	{
+		ClearRespawnCountdown();
+		RespawnRunnerAfterDeath();
+		return;
+	}
+
+	if (RunnerHUDWidget)
+	{
+		RunnerHUDWidget->ShowRespawnCountdown(RespawnCountdownRemaining);
+	}
+}
+
+void APolar_Bear_RunnerPlayerController::ClearRespawnCountdown()
+{
+	if (UWorld* World = GetWorld())
+	{
+		World->GetTimerManager().ClearTimer(RespawnCountdownTimerHandle);
+	}
+
+	bRespawnCountdownActive = false;
+	RespawnCountdownRemaining = 0;
 }
 
 void APolar_Bear_RunnerPlayerController::RespawnRunnerAfterDeath()
 {
 	UE_LOG(LogPolar_Bear_Runner, Warning, TEXT("Respawn timer fired"));
+	ClearRespawnCountdown();
 
 	if (UWorld* World = GetWorld())
 	{
@@ -193,9 +289,14 @@ void APolar_Bear_RunnerPlayerController::RespawnRunnerAfterDeath()
 
 	SetIgnoreMoveInput(false);
 	SetIgnoreLookInput(false);
+	bShowMouseCursor = false;
+
+	FInputModeGameOnly InputMode;
+	SetInputMode(InputMode);
 
 	if (RunnerHUDWidget)
 	{
+		RunnerHUDWidget->HideRespawnCountdown();
 		RunnerHUDWidget->HideGameOver();
 	}
 

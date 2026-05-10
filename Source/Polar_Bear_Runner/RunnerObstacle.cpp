@@ -44,7 +44,7 @@ void ApplyWhiteMaterial(UStaticMeshComponent* MeshComponent, UObject* Owner)
 }
 */
 
-inline void ApplyWhiteMaterial(UStaticMeshComponent* MeshComponent, UObject* Owner)
+inline void ApplyObstacleWhiteMaterial(UStaticMeshComponent* MeshComponent, UObject* Owner)
 {
 	if (MeshComponent == nullptr)
 	{
@@ -224,7 +224,7 @@ void ARunnerObstacle::ApplyVisualSettings()
 		MeshSize.Z > UE_KINDA_SMALL_NUMBER ? DesiredSize.Z / MeshSize.Z : 1.0f);
 
 	ObstacleMesh->SetRelativeScale3D(NewScale);
-	ApplyWhiteMaterial(ObstacleMesh, this);
+	ApplyObstacleWhiteMaterial(ObstacleMesh, this);
 }
 
 void ARunnerObstacle::ConfigureLabel()

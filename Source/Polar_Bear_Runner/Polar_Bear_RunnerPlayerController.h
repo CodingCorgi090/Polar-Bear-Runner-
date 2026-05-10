@@ -4,6 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/PlayerController.h"
+#include "TimerManager.h"
 #include "Polar_Bear_RunnerPlayerController.generated.h"
 
 class UInputMappingContext;
@@ -65,6 +66,15 @@ protected:
 	UPROPERTY(BlueprintReadOnly, Category="Runner|UI")
 	TObjectPtr<URunnerHUDWidget> RunnerHUDWidget;
 
+	/** Seconds shown after the player chooses to continue. */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Runner|Respawn", meta=(ClampMin="1", UIMin="1"))
+	int32 RespawnCountdownSeconds = 3;
+
+	FTimerHandle RespawnCountdownTimerHandle;
+	int32 RespawnCountdownRemaining = 0;
+	bool bWaitingForContinueChoice = false;
+	bool bRespawnCountdownActive = false;
+
 	UFUNCTION()
 	void HandleRunnerHealthChanged(float NewHealth, float MaxHealth);
 
@@ -78,6 +88,9 @@ protected:
 
 	void UnbindFromRunnerCharacter(APolar_Bear_RunnerCharacter* RunnerCharacter);
 
+	void StartRespawnCountdown();
+	void AdvanceRespawnCountdown();
+	void ClearRespawnCountdown();
 	void RespawnRunnerAfterDeath();
 
 public:
@@ -96,5 +109,13 @@ public:
 	//Hands the new score to the HUD
 	UFUNCTION(BlueprintCallable, Category = "Runner|Score")
 	void ReportLevelUpdate(int32 const NewLevel);
+
+	/** Call this from the game-over Yes button. Starts the respawn countdown. */
+	UFUNCTION(BlueprintCallable, Category="Runner|GameOver")
+	void ContinueAfterDeath();
+
+	/** Call this from the game-over No button. Closes the game. */
+	UFUNCTION(BlueprintCallable, Category="Runner|GameOver")
+	void QuitAfterDeath();
 
 };

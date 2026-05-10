@@ -89,7 +89,8 @@ protected:
 
 public:
 	
-	//virtual void Tick(float DeltaTime) override;
+	virtual void Tick(float DeltaTime) override;
+
 	/** Handles move inputs from either controls or UI interfaces */
 	UFUNCTION(BlueprintCallable, Category="Input")
 	virtual void DoMove(float Right, float Forward);
@@ -252,6 +253,31 @@ protected:
 	//Player Level
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Runner|Level")
 	int32 PlayerLevel = 0;
+
+	/** If true, the runner automatically moves forward after the run starts. */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Runner|Auto Run")
+	bool bAutoRunForward = true;
+
+	/** Starting run speed. Kept lower so the run starts slow. */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Runner|Auto Run", meta=(ClampMin="1.0", UIMin="1.0", Units="cm/s"))
+	float AutoRunStartSpeed = 400.0f;
+
+	/** Passive speed gain per second while alive. */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Runner|Auto Run", meta=(ClampMin="0.0", UIMin="0.0", Units="cm/s"))
+	float AutoRunAccelerationPerSecond = 10.0f;
+
+	/** Speed added when the score crosses each Points Per Speed Increase tier. */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Runner|Auto Run", meta=(ClampMin="0.0", UIMin="0.0", Units="cm/s"))
+	float ScoreSpeedIncrease = 60.0f;
+
+	/** Score needed for each score-based speed increase. */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Runner|Auto Run", meta=(ClampMin="1", UIMin="1"))
+	int32 PointsPerSpeedIncrease = 16;
+
+	/** Speed cap for passive and score-based acceleration. */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Runner|Auto Run", meta=(ClampMin="1.0", UIMin="1.0", Units="cm/s"))
+	float MaxAutoRunSpeed = 2000.0f;
+
 	/** Optional spawn point reference. Assign this on the Character Blueprint or placed instance to control respawn.
 	 *  If left unset, the runner respawns at its starting transform.
 	 */
@@ -265,9 +291,13 @@ private:
 	float LastDamageTimeSeconds = -1.0f;
 	
 	float NewWalkSpeed = 500.0f;
+	float AutoRunElapsedSeconds = 0.0f;
+	FVector AutoRunForwardDirection = FVector::ForwardVector;
 
 	FVector GetGroundedRespawnLocation(const FVector& DesiredLocation) const;
 	void RebuildEndlessCoursesForRespawn() const;
+	void CacheAutoRunForwardDirection(const FRotator& ForwardRotation);
+	void ApplyCurrentRunSpeed();
 
 public:
 

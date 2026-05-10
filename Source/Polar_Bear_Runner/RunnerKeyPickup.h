@@ -67,7 +67,7 @@ protected:
 public:
 	/** Score value for this key. Not consumed yet by game systems, but exposed for future score integration. */
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Runner|Key", meta=(ClampMin="0", UIMin="0"))
-	int32 KeyValue = 1;
+	int32 KeyValue = 2;
 
 	/** If true, overlap with the runner will collect this key. */
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Runner|Key")

@@ -48,7 +48,7 @@ void ApplyWhiteMaterial(UStaticMeshComponent* MeshComponent, UObject* Owner)
 }
 */
 
-inline void ApplyWhiteMaterial(UStaticMeshComponent* MeshComponent, UObject* Owner)
+inline void ApplyCourseWhiteMaterial(UStaticMeshComponent* MeshComponent, UObject* Owner)
 {
 	if (MeshComponent == nullptr)
 	{
@@ -439,7 +439,7 @@ void ARunnerEndlessCourse::SpawnActorOnTile(FRunnerCourseTile& Tile, TSubclassOf
 					MeshSize.X > UE_KINDA_SMALL_NUMBER ? CubeSize / MeshSize.X : 1.0f,
 					MeshSize.Y > UE_KINDA_SMALL_NUMBER ? CubeSize / MeshSize.Y : 1.0f,
 					MeshSize.Z > UE_KINDA_SMALL_NUMBER ? CubeSize / MeshSize.Z : 1.0f));
-				ApplyWhiteMaterial(MeshComponent, SpawnedActor);
+				ApplyCourseWhiteMaterial(MeshComponent, SpawnedActor);
 				MeshComponent->SetVisibility(true, true);
 				MeshComponent->SetHiddenInGame(false, true);
 				PlacementBoundsComponent = MeshComponent;

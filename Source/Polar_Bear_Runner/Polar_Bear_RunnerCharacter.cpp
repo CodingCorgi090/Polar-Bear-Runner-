@@ -19,6 +19,8 @@
 
 APolar_Bear_RunnerCharacter::APolar_Bear_RunnerCharacter()
 {
+	PrimaryActorTick.bCanEverTick = true;
+
 	// Set size for collision capsule
 	GetCapsuleComponent()->InitCapsuleSize(42.f, 96.0f);
 		
@@ -81,6 +83,30 @@ void APolar_Bear_RunnerCharacter::BeginPlay()
 	}
 
 	UE_LOG(LogPolar_Bear_Runner, Log, TEXT("Character initial transform set to %s"), *InitialTransform.GetLocation().ToString());
+
+	CacheAutoRunForwardDirection(InitialTransform.Rotator());
+	ResetRunnerAccel();
+}
+
+void APolar_Bear_RunnerCharacter::Tick(float DeltaTime)
+{
+	Super::Tick(DeltaTime);
+
+	if (!bAutoRunForward || bIsDead || GetCharacterMovement() == nullptr || GetCharacterMovement()->MovementMode == MOVE_None)
+	{
+		return;
+	}
+
+	AutoRunElapsedSeconds += FMath::Max(DeltaTime, 0.0f);
+
+	const float TimeTargetSpeed = FMath::Max(AutoRunStartSpeed, 400.0f) + (AutoRunElapsedSeconds * FMath::Max(AutoRunAccelerationPerSecond, 10.0f));
+	if (TimeTargetSpeed > NewWalkSpeed)
+	{
+		NewWalkSpeed = FMath::Min(TimeTargetSpeed, MaxAutoRunSpeed);
+		ApplyCurrentRunSpeed();
+	}
+
+	AddMovementInput(AutoRunForwardDirection, 1.0f);
 }
 
 void APolar_Bear_RunnerCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
@@ -278,25 +304,41 @@ int APolar_Bear_RunnerCharacter::GetScore() const
 // as the new score
 bool APolar_Bear_RunnerCharacter::AddScore(int32 const Amount)
 {
-	// Verify that there is a positive increment, then calculate
-	if (Amount >= 1) {
-		Score += Amount;
-		UE_LOG(LogPolar_Bear_Runner, Log, TEXT("Score changed. New score: %d"), Score);
-		if (Score % 5 == 0)
-		{
-			AddPlayerLevel();
-		}
-		return true;
-	}
-	else {
+	if (Amount < 1)
+	{
 		return false;
 	}
+
+	const int32 PreviousScore = Score;
+	Score += Amount;
+
+	UE_LOG(LogPolar_Bear_Runner, Log, TEXT("Score changed. New score: %d"), Score);
+	OnRunnerScoreChanged.Broadcast(Score, Amount);
+	BP_OnScoreChanged(Score);
+
+	const int32 ClampedPointsPerSpeedIncrease = FMath::Max(PointsPerSpeedIncrease, 1);
+	const int32 PreviousSpeedTier = PreviousScore / ClampedPointsPerSpeedIncrease;
+	const int32 NewSpeedTier = Score / ClampedPointsPerSpeedIncrease;
+
+	for (int32 TierIndex = PreviousSpeedTier; TierIndex < NewSpeedTier; ++TierIndex)
+	{
+		AddPlayerLevel();
+	}
+
+	return true;
 }
 
 // Sets the score to 0 
 void APolar_Bear_RunnerCharacter::ResetScore()
 {
+	const int32 PreviousScore = Score;
 	Score = 0;
+
+	if (PreviousScore != 0)
+	{
+		OnRunnerScoreChanged.Broadcast(Score, -PreviousScore);
+		BP_OnScoreChanged(Score);
+	}
 }
 
 void APolar_Bear_RunnerCharacter::RespawnPlayer()
@@ -339,6 +381,10 @@ void APolar_Bear_RunnerCharacter::RespawnPlayer()
 
 	// Reset health
 	ResetRunnerHealth(true);
+	ResetScore();
+	ResetPlayerLevel();
+	CacheAutoRunForwardDirection(SpawnRotation);
+	ResetRunnerAccel();
 
 	UE_LOG(LogPolar_Bear_Runner, Log, TEXT("RespawnPlayer complete. Current location: %s, Health: %f"), *GetActorLocation().ToString(), CurrentHealth);
 }
@@ -398,16 +444,12 @@ void APolar_Bear_RunnerCharacter::ResetPlayerLevel()
 bool APolar_Bear_RunnerCharacter::ApplyRunnerAccel()
 {
 	UE_LOG(LogPolar_Bear_Runner, Log, TEXT("Current walk speed: %f"), NewWalkSpeed);
-	if (NewWalkSpeed < 2000.0f)
+	if (NewWalkSpeed < MaxAutoRunSpeed)
 	{
-		NewWalkSpeed += 100;
+		NewWalkSpeed = FMath::Min(NewWalkSpeed + FMath::Max(ScoreSpeedIncrease, 60.0f), MaxAutoRunSpeed);
 		UE_LOG(LogPolar_Bear_Runner, Log, TEXT("New walk speed: %f"), NewWalkSpeed);
-		
-		if (GetCharacterMovement())
-		{
-			GetCharacterMovement()->MaxWalkSpeed = NewWalkSpeed;
-			UE_LOG(LogPolar_Bear_Runner, Log, TEXT("%f applied"), NewWalkSpeed);
-		}
+
+		ApplyCurrentRunSpeed();
 		return true;
 	}
 	else
@@ -419,7 +461,31 @@ bool APolar_Bear_RunnerCharacter::ApplyRunnerAccel()
 // Sets the level to 0 
 void APolar_Bear_RunnerCharacter::ResetRunnerAccel()
 {
-	NewWalkSpeed = 500.0f;
+	AutoRunElapsedSeconds = 0.0f;
+	NewWalkSpeed = FMath::Max(AutoRunStartSpeed, 400.0f);
+	ApplyCurrentRunSpeed();
+}
+
+void APolar_Bear_RunnerCharacter::CacheAutoRunForwardDirection(const FRotator& ForwardRotation)
+{
+	AutoRunForwardDirection = ForwardRotation.Vector();
+	AutoRunForwardDirection.Z = 0.0f;
+
+	if (!AutoRunForwardDirection.Normalize())
+	{
+		AutoRunForwardDirection = FVector::ForwardVector;
+	}
+}
+
+void APolar_Bear_RunnerCharacter::ApplyCurrentRunSpeed()
+{
+	NewWalkSpeed = FMath::Clamp(NewWalkSpeed, 1.0f, MaxAutoRunSpeed);
+
+	if (GetCharacterMovement())
+	{
+		GetCharacterMovement()->MaxWalkSpeed = NewWalkSpeed;
+		UE_LOG(LogPolar_Bear_Runner, Log, TEXT("%f applied"), NewWalkSpeed);
+	}
 }
 
 FVector APolar_Bear_RunnerCharacter::GetGroundedRespawnLocation(const FVector& DesiredLocation) const

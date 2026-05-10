@@ -217,6 +217,7 @@ bool ARunnerKeyPickup::TryCollect(AActor* OtherActor)
 		return false;
 	}
 
+	KeyValue = 2;
 	bCollected = true;
 
 	if (bDisableCollisionOnCollect)

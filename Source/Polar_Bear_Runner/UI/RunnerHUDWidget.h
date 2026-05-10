@@ -17,6 +17,8 @@ class POLAR_BEAR_RUNNER_API URunnerHUDWidget : public UUserWidget
 	GENERATED_BODY()
 
 public:
+	virtual void NativeConstruct() override;
+
 	UFUNCTION(BlueprintCallable, Category="Runner|UI")
 	void UpdateHealth(float NewHealth, float InMaxHealth);
 
@@ -25,6 +27,15 @@ public:
 
 	UFUNCTION(BlueprintCallable, Category="Runner|UI")
 	void HideGameOver();
+
+	UFUNCTION(BlueprintCallable, Category="Runner|UI")
+	void ShowContinuePrompt();
+
+	UFUNCTION(BlueprintCallable, Category="Runner|UI")
+	void ShowRespawnCountdown(int32 SecondsRemaining);
+
+	UFUNCTION(BlueprintCallable, Category="Runner|UI")
+	void HideRespawnCountdown();
 
 	UFUNCTION(BlueprintPure, Category="Runner|UI")
 	float GetHealthPercent() const;
@@ -41,6 +52,15 @@ public:
 	UFUNCTION(BlueprintImplementableEvent, Category="Runner|UI")
 	void BP_OnGameOverHidden();
 
+	UFUNCTION(BlueprintImplementableEvent, Category="Runner|UI")
+	void BP_OnContinuePromptShown();
+
+	UFUNCTION(BlueprintImplementableEvent, Category="Runner|UI")
+	void BP_OnRespawnCountdownUpdated(int32 SecondsRemaining);
+
+	UFUNCTION(BlueprintImplementableEvent, Category="Runner|UI")
+	void BP_OnRespawnCountdownHidden();
+
 	// Updates the player UI score
 	UFUNCTION(BlueprintCallable, Category = "Runner|UI")
 	void UpdateScore(int32 const NewScore);
@@ -56,6 +76,16 @@ public:
 	void UpdateLevelProgress();
 
 protected:
+	void EnsureFallbackContinuePrompt();
+	void SetFallbackContinuePromptVisible(bool bVisible);
+	void SetFallbackCountdownVisible(bool bVisible);
+
+	UFUNCTION()
+	void HandleFallbackContinueClicked();
+
+	UFUNCTION()
+	void HandleFallbackQuitClicked();
+
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Runner|UI")
 	float CurrentHealth = 0.0f;
 
@@ -70,13 +100,31 @@ protected:
 	
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Runner|UI")
 	int CurrentLevel = 0;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Runner|UI")
+	int32 CurrentRespawnCountdownSeconds = -1;
 	
 	UPROPERTY(BlueprintReadOnly, Category="Runner|UI", meta = (BindWidgetOptional))
 	UTextBlock* ScoreBlock;
+
+	UPROPERTY(BlueprintReadOnly, Category="Runner|UI", meta = (BindWidgetOptional))
+	UTextBlock* RespawnCountdownBlock;
+
+	UPROPERTY(Transient)
+	TObjectPtr<class UBorder> FallbackContinuePanel;
+
+	UPROPERTY(Transient)
+	TObjectPtr<class UTextBlock> FallbackPromptText;
+
+	UPROPERTY(Transient)
+	TObjectPtr<class UTextBlock> FallbackCountdownBlock;
+
+	UPROPERTY(Transient)
+	TObjectPtr<class UHorizontalBox> FallbackButtonRow;
 	
-	UPROPERTY(meta = (BindWidget))
+	UPROPERTY(meta = (BindWidgetOptional))
 	UTextBlock* LevelLabel;
 	
-	UPROPERTY(meta = (BindWidget))
+	UPROPERTY(meta = (BindWidgetOptional))
 	UProgressBar* LevelProgress;
 };
