@@ -361,23 +361,16 @@ void APolar_Bear_RunnerCharacter::SetRespawnPoint(ARunnerSpawnPoint* NewSpawnPoi
 // Adds to the players level	
 bool APolar_Bear_RunnerCharacter::AddPlayerLevel()
 {
-	if (PlayerLevel < 15)
+	PlayerLevel ++;
+	UE_LOG(LogPolar_Bear_Runner, Log, TEXT("Level changed. New level: %d"), PlayerLevel);
+	
+	if (APolar_Bear_RunnerPlayerController* GameController = Cast<APolar_Bear_RunnerPlayerController>(this->GetController()))
 	{
-		PlayerLevel ++;
-		UE_LOG(LogPolar_Bear_Runner, Log, TEXT("Level changed. New level: %d"), PlayerLevel);
-		
-		if (APolar_Bear_RunnerPlayerController* GameController = Cast<APolar_Bear_RunnerPlayerController>(this->GetController()))
-		{
-			GameController->ReportLevelUpdate(PlayerLevel);
-		}
-		
-		ApplyRunnerAccel();
-		return true;
+		GameController->ReportLevelUpdate(PlayerLevel);
 	}
-	else
-	{
-		return false;
-	}
+	
+	ApplyRunnerAccel();
+	return true;
 	
 }
 
@@ -398,7 +391,7 @@ void APolar_Bear_RunnerCharacter::ResetPlayerLevel()
 bool APolar_Bear_RunnerCharacter::ApplyRunnerAccel()
 {
 	UE_LOG(LogPolar_Bear_Runner, Log, TEXT("Current walk speed: %f"), NewWalkSpeed);
-	if (NewWalkSpeed < 2000.0f)
+	if (NewWalkSpeed < 10000.0f)
 	{
 		NewWalkSpeed += 100;
 		UE_LOG(LogPolar_Bear_Runner, Log, TEXT("New walk speed: %f"), NewWalkSpeed);
