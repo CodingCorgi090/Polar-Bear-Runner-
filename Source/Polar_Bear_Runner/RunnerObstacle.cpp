@@ -12,6 +12,7 @@
 #include "Materials/MaterialInstanceDynamic.h"
 #include "Materials/MaterialInterface.h"
 #include "Polar_Bear_Runner.h"
+#include "ApplyWhiteMaterial.h"
 
 
 /**

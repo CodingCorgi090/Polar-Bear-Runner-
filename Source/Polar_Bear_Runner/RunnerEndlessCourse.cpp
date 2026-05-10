@@ -18,6 +18,7 @@
 #include "RunnerFloorTile.h"
 #include "RunnerKeyPickup.h"
 #include "RunnerObstacle.h"
+#include "ApplyWhiteMaterial.h"
 /**
 namespace
 {
