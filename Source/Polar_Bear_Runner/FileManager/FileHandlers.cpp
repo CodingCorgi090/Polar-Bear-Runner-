@@ -8,9 +8,7 @@
 
 bool UFile_Handler::SaveScores(FString const User, int32 const Score)
 {
-	
-	//FString const HighScorePath = FPaths::ProjectDir() + TEXT("Intermediate/ProjectFiles/ScoreResults/HighScores.txt");
-	FString const HighScorePath = FPaths::ProjectDir() + TEXT("HighScores.txt");
+	FString const HighScorePath = FPaths::ProjectDir() + TEXT("ScoreData/MyScores.txt");
 	UE_LOG(LogPolar_Bear_Runner, Log, TEXT("%s"), *HighScorePath);
 	FString const UserScore = FString::FromInt(Score);
 	FString const UserName = User;
@@ -50,7 +48,7 @@ bool UFile_Handler::SaveScores(FString const User, int32 const Score)
 
 TArray<FString> UFile_Handler::GetScores()
 {
-	FString const HighScorePath = FPaths::ProjectDir() + TEXT("HighScores.txt");
+	FString const HighScorePath = FPaths::ProjectDir() + TEXT("ScoreData/MyScores.txt");
 	FString SavedScores;
 	TArray<FString> HighScoreData;
 	
