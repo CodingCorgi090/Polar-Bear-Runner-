@@ -16,6 +16,7 @@
 #include "EngineUtils.h"
 #include "RunnerEndlessCourse.h"
 #include "RunnerSpawnPoint.h"
+#include "FileManager/FileHandlers.h"
 
 APolar_Bear_RunnerCharacter::APolar_Bear_RunnerCharacter()
 {
@@ -282,6 +283,18 @@ bool APolar_Bear_RunnerCharacter::AddScore(int32 const Amount)
 	if (Amount >= 1) {
 		Score += Amount;
 		UE_LOG(LogPolar_Bear_Runner, Log, TEXT("Score changed. New score: %d"), Score);
+		
+		FString Player = "John";
+		
+		UFile_Handler* FileHandler = NewObject<UFile_Handler>(this);
+		FileHandler->SaveScores(Player, Score);
+		TArray<FString> MyScores = FileHandler->GetScores();
+		
+		for (int32 index = 0; index < MyScores.Num(); ++index)
+		{
+			UE_LOG(LogPolar_Bear_Runner, Log, TEXT("Here's score %d: %s"), index, *MyScores[index]);
+		}
+		
 		if (Score % 5 == 0)
 		{
 			AddPlayerLevel();
