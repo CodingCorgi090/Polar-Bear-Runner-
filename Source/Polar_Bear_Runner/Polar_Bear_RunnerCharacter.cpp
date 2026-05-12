@@ -282,20 +282,24 @@ bool APolar_Bear_RunnerCharacter::AddScore(int32 const Amount)
 	// Verify that there is a positive increment, then calculate
 	if (Amount >= 1) {
 		Score += Amount;
+		// Logs the new score value
 		UE_LOG(LogPolar_Bear_Runner, Log, TEXT("Score changed. New score: %d"), Score);
 		
-		FString Player = "John";
-		
+		// *****TEMP*****
+		// Creates an instance of the file handler
 		UFile_Handler* FileHandler = NewObject<UFile_Handler>(this);
-		FileHandler->SaveScores(Player, Score);
+		// Saves the score change value
+		FileHandler->SaveScores(Score);
+		// Gets the new list of scores
 		TArray<FString> MyScores = FileHandler->GetScores();
-		
+		// Logs each score
 		for (int32 index = 0; index < MyScores.Num(); ++index)
 		{
 			UE_LOG(LogPolar_Bear_Runner, Log, TEXT("Here's score %d: %s"), index, *MyScores[index]);
 		}
 		
-		if (Score % 5 == 0)
+		// Determines when the player levels up
+		if (Score % 10 == 0)
 		{
 			AddPlayerLevel();
 		}

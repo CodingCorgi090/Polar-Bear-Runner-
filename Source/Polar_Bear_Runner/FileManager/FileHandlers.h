@@ -22,12 +22,11 @@ public:
 	TArray<FString> GetScores();
 	
 	UFUNCTION(BlueprintCallable, Category="FileHandler")
-	bool SaveScores(FString User, int32 const Score);
+	bool SaveScores(int32 const Score, FString User = "Player1");
 
 	
 protected:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="FileHandler")
-	FString ScoreDirectory = "";
-	
+	FString ScoreDirectory = "ScoreData/MyScores.txt";
 	
 };
