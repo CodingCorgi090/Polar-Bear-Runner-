@@ -1,4 +1,4 @@
-﻿#include "UI/RunnerHUDWidget.h"
+#include "UI/RunnerHUDWidget.h"
 
 #include "Polar_Bear_Runner.h"
 #include "Polar_Bear_RunnerPlayerController.h"
@@ -152,7 +152,7 @@ void URunnerHUDWidget::UpdateLevelProgress()
 {
 	UE_LOG(LogPolar_Bear_Runner, Log, TEXT("CurrentScore:  %d"), CurrentScore);
 	
-	float ProgressPercent = FMath::Clamp((CurrentScore % 16 / 16.0f), 0.0f, 1.0f);
+	float ProgressPercent = FMath::Clamp((CurrentScore % 10 / 10.0f), 0.0f, 1.0f);
 	
 	if (LevelProgress)
 	{
