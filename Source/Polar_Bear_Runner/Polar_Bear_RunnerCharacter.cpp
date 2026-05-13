@@ -58,6 +58,11 @@ APolar_Bear_RunnerCharacter::APolar_Bear_RunnerCharacter()
 	// are set in the derived blueprint asset named ThirdPersonCharacter (to avoid direct content references in C++)
 }
 
+APolar_Bear_RunnerPlayerController* APolar_Bear_RunnerCharacter::GetPolarBearController()
+{
+	APolar_Bear_RunnerPlayerController* PolarBearController = Cast<APolar_Bear_RunnerPlayerController>(this->GetController());
+	return PolarBearController;
+}
 void APolar_Bear_RunnerCharacter::BeginPlay()
 {
 	Super::BeginPlay();
@@ -87,6 +92,9 @@ void APolar_Bear_RunnerCharacter::BeginPlay()
 
 	CacheAutoRunForwardDirection(InitialTransform.Rotator());
 	ResetRunnerAccel();
+	GetHighScore();
+	
+	
 }
 
 void APolar_Bear_RunnerCharacter::Tick(float DeltaTime)
@@ -311,19 +319,6 @@ bool APolar_Bear_RunnerCharacter::AddScore(int32 const Amount)
 		// Logs the new score value
 		UE_LOG(LogPolar_Bear_Runner, Log, TEXT("Score changed. New score: %d"), Score);
 		
-		// *****TEMP*****
-		// Creates an instance of the file handler
-		UFile_Handler* FileHandler = NewObject<UFile_Handler>(this);
-		// Saves the score change value
-		FileHandler->SaveScores(Score);
-		// Gets the new list of scores
-		TArray<FString> MyScores = FileHandler->GetScores();
-		// Logs each score
-		for (int32 index = 0; index < MyScores.Num(); ++index)
-		{
-			UE_LOG(LogPolar_Bear_Runner, Log, TEXT("Here's score %d: %s"), index, *MyScores[index]);
-		}
-		
 		// Determines when the player levels up
 		if (Score % 10 == 0)
 		{
@@ -334,7 +329,7 @@ bool APolar_Bear_RunnerCharacter::AddScore(int32 const Amount)
 	else {
 		return false;
 	}
-
+/**
 	const int32 PreviousScore = Score;
 	Score += Amount;
 
@@ -352,6 +347,7 @@ bool APolar_Bear_RunnerCharacter::AddScore(int32 const Amount)
 	}
 
 	return true;
+	*/
 }
 
 // Sets the score to 0 
@@ -411,6 +407,7 @@ void APolar_Bear_RunnerCharacter::RespawnPlayer()
 	ResetPlayerLevel();
 	CacheAutoRunForwardDirection(SpawnRotation);
 	ResetRunnerAccel();
+	GetHighScore();
 
 	UE_LOG(LogPolar_Bear_Runner, Log, TEXT("RespawnPlayer complete. Current location: %s, Health: %f"), *GetActorLocation().ToString(), CurrentHealth);
 }
@@ -436,9 +433,9 @@ bool APolar_Bear_RunnerCharacter::AddPlayerLevel()
 	PlayerLevel ++;
 	UE_LOG(LogPolar_Bear_Runner, Log, TEXT("Level changed. New level: %d"), PlayerLevel);
 	
-	if (APolar_Bear_RunnerPlayerController* GameController = Cast<APolar_Bear_RunnerPlayerController>(this->GetController()))
+	if (GetPolarBearController())
 	{
-		GameController->ReportLevelUpdate(PlayerLevel);
+		GetPolarBearController()->ReportLevelUpdate(PlayerLevel);
 	}
 	
 	ApplyRunnerAccel();
@@ -456,6 +453,11 @@ int32 APolar_Bear_RunnerCharacter::GetPlayerLevel() const
 void APolar_Bear_RunnerCharacter::ResetPlayerLevel()
 {
 	PlayerLevel = 0;
+	
+	if (GetPolarBearController())
+	{
+		GetPolarBearController()->ReportLevelUpdate(PlayerLevel);
+	}
 }
 
 
@@ -466,7 +468,7 @@ bool APolar_Bear_RunnerCharacter::ApplyRunnerAccel()
 	if (NewWalkSpeed < MaxAutoRunSpeed)
 	{
 		NewWalkSpeed = FMath::Min(NewWalkSpeed + FMath::Max(ScoreSpeedIncrease, 60.0f), MaxAutoRunSpeed);
-		UE_LOG(LogPolar_Bear_Runner, Log, TEXT("New walk speed: %f"), NewWalkSpeed);
+		//UE_LOG(LogPolar_Bear_Runner, Log, TEXT("New walk speed: %f"), NewWalkSpeed);
 
 		ApplyCurrentRunSpeed();
 		return true;
@@ -549,3 +551,45 @@ void APolar_Bear_RunnerCharacter::RebuildEndlessCoursesForRespawn() const
 	}
 }
 
+// Reads the scores from the text file, parses them and sets the high score on the HUD
+void APolar_Bear_RunnerCharacter::GetHighScore()
+{
+	// Set up variables
+	UFile_Handler* FileHandler = NewObject<UFile_Handler>(this);
+	TArray<FString> MyScores = FileHandler->GetScores();
+	int32 HighScore = 0;
+	
+	// Verify that the returned value is an array
+	if (MyScores.Num() >= 1)
+	{
+		// Loop through the array values
+		for (int32 index = 0; index < MyScores.Num(); ++index)
+		{
+			// Parse the user/score value on the delimiter
+			TArray<FString> ScoreDataArray;
+			MyScores[index].ParseIntoArray(ScoreDataArray, TEXT(";"), true);
+			
+			// Verify that the new array contains a score value
+			if (ScoreDataArray.Num() >= 1 )
+			{
+				// Convert the string score value into an integer
+				int32 ScoreNum = FCString::Atoi(*ScoreDataArray[1]);
+				UE_LOG(LogPolar_Bear_Runner, Log, TEXT("%d"), ScoreNum);
+				
+				// Compare the value to the current high score value and update if the new score is greater
+				if (ScoreNum > HighScore)
+				{
+					HighScore = ScoreNum;
+					if (GetPolarBearController())
+					{
+						GetPolarBearController()->ReportHighScoreUpdate(HighScore);
+					}
+				}
+			}
+		}
+	}
+	else
+	{
+		GetPolarBearController()->ReportHighScoreUpdate(0);
+	}
+}

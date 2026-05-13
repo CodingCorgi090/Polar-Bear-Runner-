@@ -74,6 +74,9 @@ public:
 	
 	UFUNCTION(BlueprintCallable, Category="Runner|UI")
 	void UpdateLevelProgress();
+	
+	UFUNCTION(BlueprintCallable, Category="Runner|UI")
+	void UpdateHighScore(int32 const HighScore);
 
 protected:
 	void EnsureFallbackContinuePrompt();
@@ -127,4 +130,10 @@ protected:
 	
 	UPROPERTY(meta = (BindWidgetOptional))
 	UProgressBar* LevelProgress;
+	
+	UPROPERTY(meta = (BindWidgetOptional))
+	UTextBlock* HighScoreLabel;
+	
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Runner|UI")
+	int CurrentHighScore = 0;
 };

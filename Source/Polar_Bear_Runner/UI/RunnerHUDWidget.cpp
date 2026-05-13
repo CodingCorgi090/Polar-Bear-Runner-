@@ -297,3 +297,21 @@ void URunnerHUDWidget::HandleFallbackQuitClicked()
 		RunnerController->QuitAfterDeath();
 	}
 }
+
+// Updates the level on the UI
+void URunnerHUDWidget::UpdateHighScore(int32 const HighScore)
+{
+	UE_LOG(LogPolar_Bear_Runner, Log, TEXT("Current high Score:  %d"), CurrentLevel);
+	// First, update the CurrentScore property on the HUD class instance
+	CurrentHighScore = HighScore;
+	
+	// Formats text to display in the HUD
+	FText const HighScoreText = FText::Format(FText::FromString("Your High Score: {0}"), HighScore);
+	
+	// Verify that the text block exists and update the HUD score
+	if (HighScoreLabel)
+	{
+		HighScoreLabel->SetText(HighScoreText);
+	}
+	
+}
