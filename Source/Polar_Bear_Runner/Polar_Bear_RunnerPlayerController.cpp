@@ -14,6 +14,7 @@
 #include "Widgets/Input/SVirtualJoystick.h"
 #include "GameFramework/WorldSettings.h"
 #include "Kismet/KismetSystemLibrary.h"
+#include "FileManager/FileHandlers.h"
 
 void APolar_Bear_RunnerPlayerController::BeginPlay()
 {
@@ -37,7 +38,25 @@ void APolar_Bear_RunnerPlayerController::BeginPlay()
 			RunnerHUDWidget->UpdateScore(0);
 			RunnerHUDWidget->UpdateLevelProgress();
 			RunnerHUDWidget->UpdateLevel(0);
+			
+			// Creates an instance of the file handler
+			UFile_Handler* FileHandler = NewObject<UFile_Handler>(this);
+			// Gets the new list of scores
+			TArray<FString> MyScores = FileHandler->GetScores();
+			// Logs each score
+			for (int32 index = 0; index < MyScores.Num(); ++index)
+			{
+				UE_LOG(LogPolar_Bear_Runner, Log, TEXT("Here's score %d: %s"), index, *MyScores[index]);
+			}
 		}
+		
+		if (APolar_Bear_RunnerCharacter* NewRunner = Cast<APolar_Bear_RunnerCharacter>(GetPawn()))
+		{
+			NewRunner->ResetScore();
+			NewRunner->ResetPlayerLevel();
+			NewRunner->ResetRunnerAccel();
+		}
+		
 	}
 
 	// only spawn touch controls on local player controllers
@@ -141,6 +160,7 @@ void APolar_Bear_RunnerPlayerController::HandleRunnerHealthChanged(float NewHeal
 void APolar_Bear_RunnerPlayerController::HandleRunnerScoreChanged(int32 NewScore, int32 Delta)
 {
 	(void)Delta;
+	CurrentScore = NewScore;
 	ReportScoreChange(NewScore);
 }
 
@@ -211,6 +231,9 @@ void APolar_Bear_RunnerPlayerController::QuitAfterDeath()
 	bWaitingForContinueChoice = false;
 
 	UE_LOG(LogPolar_Bear_Runner, Log, TEXT("Player chose not to continue. Quitting game."));
+	UFile_Handler* FileHandler = NewObject<UFile_Handler>(this);
+	// Saves the score change value
+	FileHandler->SaveScores(CurrentScore);
 	UKismetSystemLibrary::QuitGame(this, this, EQuitPreference::Quit, false);
 }
 
@@ -290,6 +313,8 @@ void APolar_Bear_RunnerPlayerController::RespawnRunnerAfterDeath()
 	else
 	{
 		RunnerCharacter->RespawnPlayer();
+		ReportScoreChange(CurrentScore);
+		
 	}
 
 	SetIgnoreMoveInput(false);
