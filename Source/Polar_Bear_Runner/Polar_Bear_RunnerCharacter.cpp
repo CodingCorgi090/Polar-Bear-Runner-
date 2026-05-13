@@ -16,7 +16,6 @@
 #include "EngineUtils.h"
 #include "RunnerEndlessCourse.h"
 #include "RunnerSpawnPoint.h"
-#include "FileManager/FileHandlers.h"
 
 APolar_Bear_RunnerCharacter::APolar_Bear_RunnerCharacter()
 {
@@ -69,10 +68,6 @@ void APolar_Bear_RunnerCharacter::BeginPlay()
 
 	InitialTransform = AssignedSpawnPoint ? AssignedSpawnPoint->GetActorTransform() : GetActorTransform();
 	ResetRunnerHealth(true);
-	
-	ResetScore();
-	ResetPlayerLevel();
-	ResetRunnerAccel();
 	
 
 	InitialTransform = GetActorTransform();
