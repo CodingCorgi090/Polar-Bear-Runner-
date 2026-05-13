@@ -94,7 +94,7 @@ protected:
 	void RespawnRunnerAfterDeath();
 	
 	UPROPERTY(EditAnywhere, Category ="Runner|Score")
-	int32 CurrentScore;
+	int32 CurrentScore = 0;
 
 public:
 	/** Routes missed-key damage to the currently possessed runner character. */

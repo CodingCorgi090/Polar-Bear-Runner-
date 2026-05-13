@@ -152,7 +152,8 @@ void URunnerHUDWidget::UpdateLevelProgress()
 {
 	UE_LOG(LogPolar_Bear_Runner, Log, TEXT("CurrentScore:  %d"), CurrentScore);
 	
-	float ProgressPercent = FMath::Clamp((CurrentScore % 10 / 10.0f), 0.0f, 1.0f);
+	constexpr int32 PointsPerLevel = 16;
+	const float ProgressPercent = FMath::Clamp((CurrentScore % PointsPerLevel) / static_cast<float>(PointsPerLevel), 0.0f, 1.0f);
 	
 	if (LevelProgress)
 	{
@@ -301,7 +302,7 @@ void URunnerHUDWidget::HandleFallbackQuitClicked()
 // Updates the level on the UI
 void URunnerHUDWidget::UpdateHighScore(int32 const HighScore)
 {
-	UE_LOG(LogPolar_Bear_Runner, Log, TEXT("Current high Score:  %d"), CurrentLevel);
+	UE_LOG(LogPolar_Bear_Runner, Log, TEXT("Current high Score:  %d"), HighScore);
 	// First, update the CurrentScore property on the HUD class instance
 	CurrentHighScore = HighScore;
 	

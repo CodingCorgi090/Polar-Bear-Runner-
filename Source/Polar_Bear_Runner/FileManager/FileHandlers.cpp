@@ -13,7 +13,7 @@
 bool UFile_Handler::SaveScores(int32 const Score, FString const User)
 {
 	// Define the path where the score is to be saved
-	FString const HighScorePath = FPaths::ProjectDir() + ScoreDirectory;
+	FString const HighScorePath = FPaths::Combine(FPaths::ProjectDir(), ScoreDirectory);
 	UE_LOG(LogPolar_Bear_Runner, Log, TEXT("%s"), *HighScorePath);
 	
 	// Converts the score argument into a string and defines a local
@@ -23,6 +23,12 @@ bool UFile_Handler::SaveScores(int32 const Score, FString const User)
 	FString const UserName = User;
 	IPlatformFile& File = FPlatformFileManager::Get().GetPlatformFile();
 	FString SavedScores;
+	const FString ScoreFolder = FPaths::GetPath(HighScorePath);
+	if (!File.DirectoryExists(*ScoreFolder) && !File.CreateDirectoryTree(*ScoreFolder))
+	{
+		UE_LOG(LogPolar_Bear_Runner, Warning, TEXT("Could not create score directory: %s"), *ScoreFolder);
+		return false;
+	}
 	
 	// Compile the User and score into one string to write to the file
 	FString HighScoreEntry = FString::Printf(TEXT("%s;%s"), *UserName, *UserScore);
@@ -73,7 +79,7 @@ bool UFile_Handler::SaveScores(int32 const Score, FString const User)
 TArray<FString> UFile_Handler::GetScores()
 {
 	// Defines the path from where the score is to be retrieved
-	FString const HighScorePath = FPaths::ProjectDir() + ScoreDirectory;
+	FString const HighScorePath = FPaths::Combine(FPaths::ProjectDir(), ScoreDirectory);
 	
 	// Initialize variables
 	FString SavedScores;

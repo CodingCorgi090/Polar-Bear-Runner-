@@ -14,6 +14,7 @@
 #include "Polar_Bear_RunnerPlayerController.h"
 #include "Engine/World.h"
 #include "EngineUtils.h"
+#include "FileManager/FileHandlers.h"
 #include "RunnerEndlessCourse.h"
 #include "RunnerSpawnPoint.h"
 
@@ -68,7 +69,9 @@ void APolar_Bear_RunnerCharacter::BeginPlay()
 
 	InitialTransform = AssignedSpawnPoint ? AssignedSpawnPoint->GetActorTransform() : GetActorTransform();
 	ResetRunnerHealth(true);
-	
+	ResetScore();
+	ResetPlayerLevel();
+	ResetRunnerAccel();
 
 	InitialTransform = GetActorTransform();
 
@@ -308,23 +311,11 @@ int APolar_Bear_RunnerCharacter::GetScore() const
 // as the new score
 bool APolar_Bear_RunnerCharacter::AddScore(int32 const Amount)
 {
-	// Verify that there is a positive increment, then calculate
-	if (Amount >= 1) {
-		Score += Amount;
-		// Logs the new score value
-		UE_LOG(LogPolar_Bear_Runner, Log, TEXT("Score changed. New score: %d"), Score);
-		
-		// Determines when the player levels up
-		if (Score % 10 == 0)
-		{
-			AddPlayerLevel();
-		}
-		return true;
-	}
-	else {
+	if (Amount < 1)
+	{
 		return false;
 	}
-/**
+
 	const int32 PreviousScore = Score;
 	Score += Amount;
 
@@ -342,7 +333,6 @@ bool APolar_Bear_RunnerCharacter::AddScore(int32 const Amount)
 	}
 
 	return true;
-	*/
 }
 
 // Sets the score to 0 
@@ -565,7 +555,7 @@ void APolar_Bear_RunnerCharacter::GetHighScore()
 			MyScores[index].ParseIntoArray(ScoreDataArray, TEXT(";"), true);
 			
 			// Verify that the new array contains a score value
-			if (ScoreDataArray.Num() >= 1 )
+			if (ScoreDataArray.Num() >= 2)
 			{
 				// Convert the string score value into an integer
 				int32 ScoreNum = FCString::Atoi(*ScoreDataArray[1]);
@@ -575,16 +565,13 @@ void APolar_Bear_RunnerCharacter::GetHighScore()
 				if (ScoreNum > HighScore)
 				{
 					HighScore = ScoreNum;
-					if (GetPolarBearController())
-					{
-						GetPolarBearController()->ReportHighScoreUpdate(HighScore);
-					}
 				}
 			}
 		}
 	}
-	else
+
+	if (APolar_Bear_RunnerPlayerController* RunnerController = GetPolarBearController())
 	{
-		GetPolarBearController()->ReportHighScoreUpdate(0);
+		RunnerController->ReportHighScoreUpdate(HighScore);
 	}
 }
