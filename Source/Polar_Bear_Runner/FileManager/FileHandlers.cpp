@@ -25,7 +25,7 @@ bool UFile_Handler::SaveScores(int32 const Score, FString const User)
 	FString SavedScores;
 	
 	// Compile the User and score into one string to write to the file
-	FString HighScoreEntry = FString::Printf(TEXT("%s: %s"), *UserName, *UserScore);
+	FString HighScoreEntry = FString::Printf(TEXT("%s;%s"), *UserName, *UserScore);
 	UE_LOG(LogPolar_Bear_Runner, Log, TEXT("%s"), *HighScoreEntry);
 	
 	// Check if the file exists yet

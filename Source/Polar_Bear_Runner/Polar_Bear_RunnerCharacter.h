@@ -11,6 +11,7 @@
 class USpringArmComponent;
 class UCameraComponent;
 class UInputAction;
+class APolar_Bear_RunnerPlayerController;
 struct FInputActionValue;
 
 // Forward declare the spawn point actor so designers can assign it in Blueprints
@@ -219,6 +220,14 @@ public:
 	//Resets the level
 	UFUNCTION(BlueprintCallable, Category = "Runner|Score")
 	void ResetPlayerLevel();
+	
+	UFUNCTION(BlueprintCallable, Category="Runner|Score")
+	void GetHighScore();
+	
+	// Gets the controller
+	UFUNCTION(BlueprintCallable, Category="Runner|Score")
+	APolar_Bear_RunnerPlayerController* GetPolarBearController();
+	
 
 protected:
 	/** Max health for each run. */

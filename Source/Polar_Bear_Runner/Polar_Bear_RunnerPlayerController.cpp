@@ -9,6 +9,7 @@
 #include "Polar_Bear_Runner.h"
 #include "Polar_Bear_RunnerCharacter.h"
 #include "Polar_Bear_RunnerGameMode.h"
+#include "FileManager/FileHandlers.h"
 #include "UI/RunnerHUDWidget.h"
 #include "Widgets/Input/SVirtualJoystick.h"
 #include "GameFramework/WorldSettings.h"
@@ -146,7 +147,7 @@ void APolar_Bear_RunnerPlayerController::HandleRunnerScoreChanged(int32 NewScore
 void APolar_Bear_RunnerPlayerController::HandleRunnerDied(ERunnerDamageType DamageType, AActor* DamageCauser)
 {
 	(void)DamageCauser;
-
+	
 	ClearRespawnCountdown();
 	bWaitingForContinueChoice = true;
 
@@ -172,6 +173,10 @@ void APolar_Bear_RunnerPlayerController::HandleRunnerDied(ERunnerDamageType Dama
 		if (const APolar_Bear_RunnerCharacter* RunnerCharacter = Cast<APolar_Bear_RunnerCharacter>(GetPawn()))
 		{
 			RunnerHUDWidget->ShowGameOver(RunnerCharacter->GetCurrentHealth(), RunnerCharacter->GetMaxHealthValue());
+			// Creates an instance of the file handler
+			UFile_Handler* FileHandler = NewObject<UFile_Handler>(this);
+			// Saves the score change value
+			FileHandler->SaveScores(RunnerCharacter->GetScore());
 		}
 
 		RunnerHUDWidget->ShowContinuePrompt();
@@ -350,6 +355,15 @@ void APolar_Bear_RunnerPlayerController::ReportLevelUpdate(int32 const NewLevel)
 	if (RunnerHUDWidget)
 	{
 		RunnerHUDWidget->UpdateLevel(NewLevel);
+	}
+	
+}
+
+void APolar_Bear_RunnerPlayerController::ReportHighScoreUpdate(int32 const NewHighScore)
+{
+	if (RunnerHUDWidget)
+	{
+		RunnerHUDWidget->UpdateHighScore(NewHighScore);
 	}
 	
 }

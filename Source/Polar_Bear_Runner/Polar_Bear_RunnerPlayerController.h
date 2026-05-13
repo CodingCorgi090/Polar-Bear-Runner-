@@ -118,4 +118,6 @@ public:
 	UFUNCTION(BlueprintCallable, Category="Runner|GameOver")
 	void QuitAfterDeath();
 
+	UFUNCTION(BlueprintCallable, Category="Runner|GameOver")
+	void ReportHighScoreUpdate(int32 const NewHighScore);
 };
