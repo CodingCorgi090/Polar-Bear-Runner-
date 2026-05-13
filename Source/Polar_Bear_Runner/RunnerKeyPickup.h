@@ -22,7 +22,7 @@ DECLARE_DYNAMIC_MULTICAST_DELEGATE_ThreeParams(FRunnerKeyCollectedSignature, APo
  * - Exposes key value/events so score systems can be added later without changing pickup collision code.
  */
 UCLASS(Blueprintable, BlueprintType)
-class ARunnerKeyPickup : public AActor
+class POLAR_BEAR_RUNNER_API ARunnerKeyPickup : public AActor
 {
 	GENERATED_BODY()
 

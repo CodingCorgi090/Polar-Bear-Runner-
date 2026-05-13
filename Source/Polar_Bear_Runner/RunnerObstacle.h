@@ -22,7 +22,7 @@ class APolar_Bear_RunnerCharacter;
  *    for VFX, SFX, or any other feedback.
  */
 UCLASS(Blueprintable, BlueprintType)
-class ARunnerObstacle : public AActor
+class POLAR_BEAR_RUNNER_API ARunnerObstacle : public AActor
 {
 	GENERATED_BODY()
 
