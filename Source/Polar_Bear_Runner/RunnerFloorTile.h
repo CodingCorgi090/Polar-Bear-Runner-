@@ -7,6 +7,7 @@
 #include "RunnerFloorTile.generated.h"
 
 class USceneComponent;
+class UMaterialInterface;
 class UStaticMesh;
 class UStaticMeshComponent;
 
@@ -44,6 +45,9 @@ protected:
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Runner|Floor Tile")
 	TObjectPtr<UStaticMesh> FloorMesh;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Runner|Floor Tile")
+	TObjectPtr<UMaterialInterface> FloorMaterial;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Runner|Floor Tile", meta=(ClampMin="100.0", UIMin="100.0", Units="cm"))
 	float TileLength = 1200.0f;

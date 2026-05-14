@@ -102,9 +102,9 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Runner|Obstacle|Visual")
 	TObjectPtr<UStaticMesh> ObstacleMeshAsset = nullptr;
 
-	/** If true, the visual mesh is scaled into a cube-like obstacle shape. */
+	/** If true, the visual mesh is forced into a cube-like obstacle shape. */
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Runner|Obstacle|Visual")
-	bool bMakeObstacleCubeLike = true;
+	bool bMakeObstacleCubeLike = false;
 
 	/** Final visual size used when bMakeObstacleCubeLike is enabled. The largest side is used for all axes so it stays square. */
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Runner|Obstacle|Visual",
@@ -134,7 +134,7 @@ public:
 
 	/** Hide this if the mesh/material already has its own readable letter. */
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Runner|Obstacle|Label")
-	bool bShowLabel = true;
+	bool bShowLabel = false;
 
 	// ── Blueprint hooks ────────────────────────────────────────────────────────
 

@@ -9,6 +9,7 @@
 class UStaticMeshComponent;
 class UBoxComponent;
 class UStaticMesh;
+class UMaterialInterface;
 class UTextRenderComponent;
 class USceneComponent;
 class APolar_Bear_RunnerCharacter;
@@ -60,6 +61,7 @@ protected:
 		UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult);
 
 	void ApplyVisualSettings();
+	void ApplyKeyMaterial(UMaterialInterface* PreferredMaterial);
 	void ConfigureLabel();
 	void UpdateLabelFacingPlayer();
 	void UpdateCollectTriggerFromVisualSize();
@@ -88,6 +90,10 @@ public:
 	/** Optional mesh override; leave null to keep the mesh configured on the Blueprint KeyMesh component. */
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Runner|Key|Visual")
 	UStaticMesh* KeyMeshAsset = nullptr;
+
+	/** Optional material override. If unset, the Blueprint KeyMesh material is preserved when C++ reshapes the key. */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Runner|Key|Visual")
+	TObjectPtr<UMaterialInterface> KeyMaterial = nullptr;
 
 	/** If true, the visual mesh is scaled into a flat floor pickup shape. */
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Runner|Key|Visual")

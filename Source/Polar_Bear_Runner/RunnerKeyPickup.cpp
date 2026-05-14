@@ -9,6 +9,8 @@
 #include "Polar_Bear_Runner.h"
 #include "Polar_Bear_RunnerCharacter.h"
 #include "Kismet/GameplayStatics.h"
+#include "Materials/MaterialInstanceDynamic.h"
+#include "Materials/MaterialInterface.h"
 #include "UObject/ConstructorHelpers.h"
 
 ARunnerKeyPickup::ARunnerKeyPickup()
@@ -106,6 +108,7 @@ void ARunnerKeyPickup::ApplyVisualSettings()
 
 	SetActorScale3D(FVector::OneVector);
 	KeyMesh->SetRelativeLocation(FVector::ZeroVector);
+	UMaterialInterface* MaterialToKeep = KeyMaterial ? KeyMaterial.Get() : KeyMesh->GetMaterial(0);
 
 	if (UStaticMesh* CubeMesh = LoadObject<UStaticMesh>(nullptr, TEXT("/Engine/BasicShapes/Cube.Cube")))
 	{
@@ -143,6 +146,45 @@ void ARunnerKeyPickup::ApplyVisualSettings()
 		MeshSize.Z > UE_KINDA_SMALL_NUMBER ? DesiredSize.Z / MeshSize.Z : 1.0f);
 
 	KeyMesh->SetRelativeScale3D(NewScale);
+	ApplyKeyMaterial(MaterialToKeep);
+}
+
+void ARunnerKeyPickup::ApplyKeyMaterial(UMaterialInterface* PreferredMaterial)
+{
+	if (KeyMesh == nullptr)
+	{
+		return;
+	}
+
+	UMaterialInterface* MaterialToApply = KeyMaterial.Get();
+	if (MaterialToApply == nullptr && PreferredMaterial != nullptr && !PreferredMaterial->GetPathName().Contains(TEXT("/Engine/BasicShapes/BasicShapeMaterial")))
+	{
+		MaterialToApply = PreferredMaterial;
+	}
+
+	if (MaterialToApply != nullptr)
+	{
+		KeyMesh->SetMaterial(0, MaterialToApply);
+		return;
+	}
+
+	UMaterialInterface* BaseMaterial = LoadObject<UMaterialInterface>(nullptr, TEXT("/Engine/BasicShapes/BasicShapeMaterial.BasicShapeMaterial"));
+	if (BaseMaterial == nullptr)
+	{
+		return;
+	}
+
+	UMaterialInstanceDynamic* FallbackMaterial = UMaterialInstanceDynamic::Create(BaseMaterial, this);
+	if (FallbackMaterial == nullptr)
+	{
+		return;
+	}
+
+	const FLinearColor KeyPink(1.0f, 0.0f, 0.75f, 1.0f);
+	FallbackMaterial->SetVectorParameterValue(TEXT("Color"), KeyPink);
+	FallbackMaterial->SetVectorParameterValue(TEXT("BaseColor"), KeyPink);
+	FallbackMaterial->SetVectorParameterValue(TEXT("Base Color"), KeyPink);
+	KeyMesh->SetMaterial(0, FallbackMaterial);
 }
 
 void ARunnerKeyPickup::ConfigureLabel()

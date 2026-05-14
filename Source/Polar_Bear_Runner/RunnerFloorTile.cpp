@@ -5,6 +5,7 @@
 #include "Components/SceneComponent.h"
 #include "Components/StaticMeshComponent.h"
 #include "Engine/StaticMesh.h"
+#include "Materials/MaterialInterface.h"
 #include "UObject/ConstructorHelpers.h"
 
 ARunnerFloorTile::ARunnerFloorTile()
@@ -25,6 +26,14 @@ ARunnerFloorTile::ARunnerFloorTile()
 		FloorMesh = DefaultCubeMesh.Object;
 		FloorMeshComponent->SetStaticMesh(FloorMesh);
 	}
+
+	static ConstructorHelpers::FObjectFinder<UMaterialInterface> DefaultFloorMaterial(
+		TEXT("/Game/Textures/AdobeStock_588030218_Mat.AdobeStock_588030218_Mat"));
+	if (DefaultFloorMaterial.Succeeded())
+	{
+		FloorMaterial = DefaultFloorMaterial.Object;
+		FloorMeshComponent->SetMaterial(0, FloorMaterial);
+	}
 }
 
 void ARunnerFloorTile::OnConstruction(const FTransform& Transform)
@@ -42,6 +51,14 @@ void ARunnerFloorTile::ConfigureFloorMesh()
 	}
 
 	FloorMeshComponent->SetStaticMesh(FloorMesh);
+	if (FloorMaterial == nullptr)
+	{
+		FloorMaterial = LoadObject<UMaterialInterface>(nullptr, TEXT("/Game/Textures/AdobeStock_588030218_Mat.AdobeStock_588030218_Mat"));
+	}
+	if (FloorMaterial)
+	{
+		FloorMeshComponent->SetMaterial(0, FloorMaterial);
+	}
 	FloorMeshComponent->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 	FloorMeshComponent->SetGenerateOverlapEvents(false);
 	FloorMeshComponent->SetRelativeLocation(FVector(0.0f, 0.0f, -FMath::Max(TileThickness, 1.0f) * 0.5f));

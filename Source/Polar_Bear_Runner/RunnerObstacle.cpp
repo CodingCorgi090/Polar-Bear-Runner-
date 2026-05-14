@@ -80,16 +80,17 @@ ARunnerObstacle::ARunnerObstacle()
 
 	ObstacleMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("ObstacleMesh"));
 	ObstacleMesh->SetupAttachment(RootComponent);
-	ObstacleMesh->SetCollisionEnabled(ECollisionEnabled::QueryOnly);
+	ObstacleMesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 	ObstacleMesh->SetCollisionObjectType(ECC_WorldDynamic);
 	ObstacleMesh->SetCollisionResponseToAllChannels(ECR_Ignore);
-	ObstacleMesh->SetCollisionResponseToChannel(ECC_Pawn, ECR_Overlap);
-	ObstacleMesh->SetGenerateOverlapEvents(true);
+	ObstacleMesh->SetGenerateOverlapEvents(false);
 
-	static ConstructorHelpers::FObjectFinder<UStaticMesh> DefaultCubeMesh(TEXT("/Engine/BasicShapes/Cube.Cube"));
-	if (DefaultCubeMesh.Succeeded())
+	static ConstructorHelpers::FObjectFinder<UStaticMesh> DefaultObstacleMesh(
+		TEXT("/Game/Models/mu\u00F1eco_de_nieve_-fbx.mu\u00F1eco_de_nieve_-fbx"));
+	if (DefaultObstacleMesh.Succeeded())
 	{
-		ObstacleMesh->SetStaticMesh(DefaultCubeMesh.Object);
+		ObstacleMeshAsset = DefaultObstacleMesh.Object;
+		ObstacleMesh->SetStaticMesh(ObstacleMeshAsset);
 	}
 
 	// Separate hit box so the damage volume can be tuned independently of the visual mesh
@@ -144,7 +145,6 @@ void ARunnerObstacle::BeginPlay()
 	HitBox->OnComponentBeginOverlap.AddDynamic(this, &ARunnerObstacle::OnDamageOverlapBegin);
 
 	ObstacleMesh->OnComponentBeginOverlap.RemoveDynamic(this, &ARunnerObstacle::OnDamageOverlapBegin);
-	ObstacleMesh->OnComponentBeginOverlap.AddDynamic(this, &ARunnerObstacle::OnDamageOverlapBegin);
 }
 
 void ARunnerObstacle::Tick(float DeltaSeconds)
@@ -161,10 +161,9 @@ void ARunnerObstacle::ConfigureDamageCollision()
 	HitBox->SetCollisionResponseToChannel(ECC_Pawn, ECR_Overlap);
 	HitBox->SetGenerateOverlapEvents(true);
 
-	ObstacleMesh->SetCollisionEnabled(ECollisionEnabled::QueryOnly);
+	ObstacleMesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 	ObstacleMesh->SetCollisionResponseToAllChannels(ECR_Ignore);
-	ObstacleMesh->SetCollisionResponseToChannel(ECC_Pawn, ECR_Overlap);
-	ObstacleMesh->SetGenerateOverlapEvents(true);
+	ObstacleMesh->SetGenerateOverlapEvents(false);
 }
 
 void ARunnerObstacle::RefreshObstacleShape()
@@ -179,19 +178,26 @@ void ARunnerObstacle::RefreshObstacleShape()
 
 void ARunnerObstacle::ApplyVisualSettings()
 {
-	bMakeObstacleCubeLike = true;
-
-	if (!bMakeObstacleCubeLike || ObstacleMesh == nullptr)
+	if (ObstacleMesh == nullptr)
 	{
 		return;
 	}
 
+	bMakeObstacleCubeLike = false;
+	bShowLabel = false;
+
 	SetActorScale3D(FVector::OneVector);
 	ObstacleMesh->SetRelativeLocation(FVector::ZeroVector);
+	ObstacleMesh->SetRelativeRotation(FRotator(0.0f, 180.0f, 0.0f));
 
-	if (UStaticMesh* CubeMesh = LoadObject<UStaticMesh>(nullptr, TEXT("/Engine/BasicShapes/Cube.Cube")))
+	if (UStaticMesh* SnowmanMesh = LoadObject<UStaticMesh>(nullptr, TEXT("/Game/Models/mu\u00F1eco_de_nieve_-fbx.mu\u00F1eco_de_nieve_-fbx")))
 	{
-		ObstacleMesh->SetStaticMesh(CubeMesh);
+		ObstacleMeshAsset = SnowmanMesh;
+		ObstacleMesh->SetStaticMesh(ObstacleMeshAsset);
+	}
+	else if (ObstacleMeshAsset != nullptr)
+	{
+		ObstacleMesh->SetStaticMesh(ObstacleMeshAsset);
 	}
 
 	TArray<UStaticMeshComponent*> StaticMeshComponents;
@@ -216,16 +222,24 @@ void ARunnerObstacle::ApplyVisualSettings()
 	}
 
 	const FVector MeshSize = StaticMesh->GetBounds().BoxExtent * 2.0f;
-	const float CubeSize = FMath::Max3(ObstacleVisualSize.X, ObstacleVisualSize.Y, ObstacleVisualSize.Z);
-	const FVector DesiredSize(FMath::Max(CubeSize, 1.0f));
+	const float TargetSize = FMath::Max(FMath::Max3(ObstacleVisualSize.X, ObstacleVisualSize.Y, ObstacleVisualSize.Z), 1.0f);
 
-	const FVector NewScale(
-		MeshSize.X > UE_KINDA_SMALL_NUMBER ? DesiredSize.X / MeshSize.X : 1.0f,
-		MeshSize.Y > UE_KINDA_SMALL_NUMBER ? DesiredSize.Y / MeshSize.Y : 1.0f,
-		MeshSize.Z > UE_KINDA_SMALL_NUMBER ? DesiredSize.Z / MeshSize.Z : 1.0f);
+	if (bMakeObstacleCubeLike)
+	{
+		const FVector DesiredSize(TargetSize);
+		const FVector NewScale(
+			MeshSize.X > UE_KINDA_SMALL_NUMBER ? DesiredSize.X / MeshSize.X : 1.0f,
+			MeshSize.Y > UE_KINDA_SMALL_NUMBER ? DesiredSize.Y / MeshSize.Y : 1.0f,
+			MeshSize.Z > UE_KINDA_SMALL_NUMBER ? DesiredSize.Z / MeshSize.Z : 1.0f);
 
-	ObstacleMesh->SetRelativeScale3D(NewScale);
-	ApplyObstacleWhiteMaterial(ObstacleMesh, this);
+		ObstacleMesh->SetRelativeScale3D(NewScale);
+		ApplyObstacleWhiteMaterial(ObstacleMesh, this);
+		return;
+	}
+
+	const float MeshLargestSide = FMath::Max3(MeshSize.X, MeshSize.Y, MeshSize.Z);
+	const float UniformScale = MeshLargestSide > UE_KINDA_SMALL_NUMBER ? TargetSize / MeshLargestSide : 1.0f;
+	ObstacleMesh->SetRelativeScale3D(FVector(UniformScale));
 }
 
 void ARunnerObstacle::ConfigureLabel()
@@ -236,7 +250,7 @@ void ARunnerObstacle::ConfigureLabel()
 	}
 
 	bLabelFacesPlayer = false;
-	ObstacleLabelText = FText::FromString(TEXT("O"));
+	bShowLabel = false;
 	ObstacleLabel->SetText(ObstacleLabelText);
 	LabelRelativeLocation = FVector(-77.0f, 0.0f, 0.0f);
 	ObstacleLabel->SetRelativeLocation(LabelRelativeLocation);
@@ -299,12 +313,19 @@ void ARunnerObstacle::UpdateHitBoxFromMeshBounds()
 	}
 
 	const FBoxSphereBounds MeshBounds = StaticMesh->GetBounds();
-	const FVector PaddedExtent(
-		FMath::Max(MeshBounds.BoxExtent.X + HitBoxPadding.X, 1.0f),
-		FMath::Max(MeshBounds.BoxExtent.Y + HitBoxPadding.Y, 1.0f),
-		FMath::Max(MeshBounds.BoxExtent.Z + HitBoxPadding.Z, 1.0f));
+	const FVector MeshScale = ObstacleMesh->GetRelativeScale3D().GetAbs();
+	const FVector MeshCenter = ObstacleMesh->GetRelativeTransform().TransformPosition(MeshBounds.Origin);
+	const FVector ScaledMeshExtent = MeshBounds.BoxExtent * MeshScale;
+	const float TargetSize = FMath::Max(FMath::Max3(ObstacleVisualSize.X, ObstacleVisualSize.Y, ObstacleVisualSize.Z), 1.0f);
+	const float MaxHorizontalExtent = FMath::Max(TargetSize * 0.36f, 35.0f);
+	const float MaxVerticalExtent = FMath::Max(TargetSize * 0.55f, 60.0f);
 
-	HitBox->SetRelativeLocation(MeshBounds.Origin);
+	const FVector PaddedExtent(
+		FMath::Clamp(ScaledMeshExtent.X + HitBoxPadding.X, 25.0f, MaxHorizontalExtent),
+		FMath::Clamp(ScaledMeshExtent.Y + HitBoxPadding.Y, 25.0f, MaxHorizontalExtent),
+		FMath::Clamp(ScaledMeshExtent.Z + HitBoxPadding.Z, 45.0f, MaxVerticalExtent));
+
+	HitBox->SetRelativeLocation(MeshCenter);
 	HitBox->SetBoxExtent(PaddedExtent, true);
 }
 
