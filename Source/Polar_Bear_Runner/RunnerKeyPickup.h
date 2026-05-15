@@ -87,7 +87,7 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Runner|Key")
 	bool bDestroyOnCollect = false;
 
-	/** Optional mesh override; leave null to keep the mesh configured on the Blueprint KeyMesh component. */
+	/** Optional mesh override; leave null to use the C++ fish mesh default. */
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Runner|Key|Visual")
 	UStaticMesh* KeyMeshAsset = nullptr;
 
@@ -95,9 +95,9 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Runner|Key|Visual")
 	TObjectPtr<UMaterialInterface> KeyMaterial = nullptr;
 
-	/** If true, the visual mesh is scaled into a flat floor pickup shape. */
+	/** If true, the visual mesh is scaled into the old flat floor pickup shape. */
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Runner|Key|Visual")
-	bool bMakeKeyCubeLike = true;
+	bool bMakeKeyCubeLike = false;
 
 	/** Final visual size used when bMakeKeyCubeLike is enabled. Kept thin so purple keys lie flat on the floor. */
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Runner|Key|Visual",
@@ -132,7 +132,7 @@ public:
 
 	/** Hide this if the mesh/material already has its own readable letter. */
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Runner|Key|Label")
-	bool bShowLabel = true;
+	bool bShowLabel = false;
 
 	/** Fired when a key is collected (future score systems can bind here). */
 	UPROPERTY(BlueprintAssignable, Category="Runner|Key|Events")

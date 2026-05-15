@@ -26,10 +26,11 @@ ARunnerKeyPickup::ARunnerKeyPickup()
 	KeyMesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 	KeyMesh->SetGenerateOverlapEvents(false);
 
-	static ConstructorHelpers::FObjectFinder<UStaticMesh> DefaultCubeMesh(TEXT("/Engine/BasicShapes/Cube.Cube"));
-	if (DefaultCubeMesh.Succeeded())
+	static ConstructorHelpers::FObjectFinder<UStaticMesh> DefaultFishMesh(TEXT("/Game/Models/Trout.Trout"));
+	if (DefaultFishMesh.Succeeded())
 	{
-		KeyMesh->SetStaticMesh(DefaultCubeMesh.Object);
+		KeyMeshAsset = DefaultFishMesh.Object;
+		KeyMesh->SetStaticMesh(KeyMeshAsset);
 	}
 
 	CollectTrigger = CreateDefaultSubobject<UBoxComponent>(TEXT("CollectTrigger"));
@@ -99,20 +100,27 @@ void ARunnerKeyPickup::RefreshKeyShape()
 
 void ARunnerKeyPickup::ApplyVisualSettings()
 {
-	bMakeKeyCubeLike = true;
-
-	if (!bMakeKeyCubeLike || KeyMesh == nullptr)
+	if (KeyMesh == nullptr)
 	{
 		return;
 	}
 
+	bMakeKeyCubeLike = false;
+	bShowLabel = false;
+
 	SetActorScale3D(FVector::OneVector);
 	KeyMesh->SetRelativeLocation(FVector::ZeroVector);
+	KeyMesh->SetRelativeRotation(FRotator::ZeroRotator);
 	UMaterialInterface* MaterialToKeep = KeyMaterial ? KeyMaterial.Get() : KeyMesh->GetMaterial(0);
 
-	if (UStaticMesh* CubeMesh = LoadObject<UStaticMesh>(nullptr, TEXT("/Engine/BasicShapes/Cube.Cube")))
+	if (UStaticMesh* FishMesh = LoadObject<UStaticMesh>(nullptr, TEXT("/Game/Models/Trout.Trout")))
 	{
-		KeyMesh->SetStaticMesh(CubeMesh);
+		KeyMeshAsset = FishMesh;
+		KeyMesh->SetStaticMesh(KeyMeshAsset);
+	}
+	else if (KeyMeshAsset != nullptr)
+	{
+		KeyMesh->SetStaticMesh(KeyMeshAsset);
 	}
 
 	TArray<UStaticMeshComponent*> StaticMeshComponents;
@@ -137,16 +145,34 @@ void ARunnerKeyPickup::ApplyVisualSettings()
 	}
 
 	const FVector MeshSize = StaticMesh->GetBounds().BoxExtent * 2.0f;
-	KeyVisualSize = FVector(170.0f, 170.0f, 8.0f);
-	const FVector DesiredSize(KeyVisualSize);
+	const float TargetSize = FMath::Max(FMath::Max3(KeyVisualSize.X, KeyVisualSize.Y, KeyVisualSize.Z), 1.0f);
 
-	const FVector NewScale(
-		MeshSize.X > UE_KINDA_SMALL_NUMBER ? DesiredSize.X / MeshSize.X : 1.0f,
-		MeshSize.Y > UE_KINDA_SMALL_NUMBER ? DesiredSize.Y / MeshSize.Y : 1.0f,
-		MeshSize.Z > UE_KINDA_SMALL_NUMBER ? DesiredSize.Z / MeshSize.Z : 1.0f);
+	if (bMakeKeyCubeLike)
+	{
+		KeyVisualSize = FVector(170.0f, 170.0f, 8.0f);
+		const FVector DesiredSize(KeyVisualSize);
+		const FVector NewScale(
+			MeshSize.X > UE_KINDA_SMALL_NUMBER ? DesiredSize.X / MeshSize.X : 1.0f,
+			MeshSize.Y > UE_KINDA_SMALL_NUMBER ? DesiredSize.Y / MeshSize.Y : 1.0f,
+			MeshSize.Z > UE_KINDA_SMALL_NUMBER ? DesiredSize.Z / MeshSize.Z : 1.0f);
 
-	KeyMesh->SetRelativeScale3D(NewScale);
-	ApplyKeyMaterial(MaterialToKeep);
+		KeyMesh->SetRelativeScale3D(NewScale);
+		ApplyKeyMaterial(MaterialToKeep);
+		return;
+	}
+
+	const float MeshLargestSide = FMath::Max3(MeshSize.X, MeshSize.Y, MeshSize.Z);
+	const float UniformScale = MeshLargestSide > UE_KINDA_SMALL_NUMBER ? TargetSize / MeshLargestSide : 1.0f;
+	KeyMesh->SetRelativeScale3D(FVector(UniformScale));
+
+	if (KeyMaterial)
+	{
+		ApplyKeyMaterial(KeyMaterial.Get());
+	}
+	else
+	{
+		KeyMesh->EmptyOverrideMaterials();
+	}
 }
 
 void ARunnerKeyPickup::ApplyKeyMaterial(UMaterialInterface* PreferredMaterial)
@@ -165,6 +191,11 @@ void ARunnerKeyPickup::ApplyKeyMaterial(UMaterialInterface* PreferredMaterial)
 	if (MaterialToApply != nullptr)
 	{
 		KeyMesh->SetMaterial(0, MaterialToApply);
+		return;
+	}
+
+	if (!bMakeKeyCubeLike)
+	{
 		return;
 	}
 
@@ -195,6 +226,7 @@ void ARunnerKeyPickup::ConfigureLabel()
 	}
 
 	bLabelFacesPlayer = false;
+	bShowLabel = false;
 	LabelRelativeLocation = FVector(0.0f, 0.0f, 7.0f);
 	KeyLabel->SetText(KeyLabelText);
 	KeyLabel->SetRelativeLocation(LabelRelativeLocation);
@@ -231,17 +263,33 @@ void ARunnerKeyPickup::UpdateLabelFacingPlayer()
 
 void ARunnerKeyPickup::UpdateCollectTriggerFromVisualSize()
 {
-	if (!bMakeKeyCubeLike || CollectTrigger == nullptr)
+	if (CollectTrigger == nullptr)
 	{
 		return;
 	}
 
-	const FVector HalfSize(
-		FMath::Max((KeyVisualSize.X * 0.5f) + CollectTriggerPadding.X, 1.0f),
-		FMath::Max((KeyVisualSize.Y * 0.5f) + CollectTriggerPadding.Y, 1.0f),
-		FMath::Max((KeyVisualSize.Z * 0.5f) + CollectTriggerPadding.Z, 1.0f));
+	if (bMakeKeyCubeLike || KeyMesh == nullptr || KeyMesh->GetStaticMesh() == nullptr)
+	{
+		const FVector HalfSize(
+			FMath::Max((KeyVisualSize.X * 0.5f) + CollectTriggerPadding.X, 1.0f),
+			FMath::Max((KeyVisualSize.Y * 0.5f) + CollectTriggerPadding.Y, 1.0f),
+			FMath::Max((KeyVisualSize.Z * 0.5f) + CollectTriggerPadding.Z, 1.0f));
 
-	CollectTrigger->SetRelativeLocation(FVector::ZeroVector);
+		CollectTrigger->SetRelativeLocation(FVector::ZeroVector);
+		CollectTrigger->SetBoxExtent(HalfSize, true);
+		return;
+	}
+
+	const FBoxSphereBounds MeshBounds = KeyMesh->GetStaticMesh()->GetBounds();
+	const FVector MeshScale = KeyMesh->GetRelativeScale3D().GetAbs();
+	const FVector MeshCenter = KeyMesh->GetRelativeTransform().TransformPosition(MeshBounds.Origin);
+	const FVector ScaledMeshExtent = MeshBounds.BoxExtent * MeshScale;
+	const FVector HalfSize(
+		FMath::Max(ScaledMeshExtent.X + CollectTriggerPadding.X, 1.0f),
+		FMath::Max(ScaledMeshExtent.Y + CollectTriggerPadding.Y, 1.0f),
+		FMath::Max(ScaledMeshExtent.Z + CollectTriggerPadding.Z, 1.0f));
+
+	CollectTrigger->SetRelativeLocation(MeshCenter);
 	CollectTrigger->SetBoxExtent(HalfSize, true);
 }
 
